@@ -1,6 +1,9 @@
 package org.audiopulse.analysis;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.audiopulse.graphics.PlotAudiogram;
 import org.audiopulse.graphics.SpectralPlot;
@@ -24,22 +27,37 @@ public class DPOAEAnalysis {
 		demo.setVisible(true);
 	}
 
+	public static File[] finder( String dirName){
+		File dir = new File(dirName);
+		return dir.listFiles(new FilenameFilter() { 
+			public boolean accept(File dir, String filename)
+			{ return filename.endsWith(".raw"); }
+		} );
+
+	}
 
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
 
 		//Get directory listing 
-		String oaeFile="/home/ikaro/test2.raw";
+		String data_dir=args[0];
 		double Fs=8000;
 		double F1=1000;
 		double F2=1500;
-		double Fres=(2*F1)-F2;
-		System.out.println("Analzing: " + oaeFile); 
-		double[] XFFT= DPOAEAnalysis.getSpectrum(ShortFile.readFile(oaeFile));
+		double Fres=(2*F1)-F2;	
+		File[] oaeFiles=finder(data_dir);
+		Arrays.sort(oaeFiles);
 
-		//Plot spectrum
-		String outFileName="/home/ikaro/dpoae.png";
-		//plotSpectrum("DPOAE",XFFT,Fs,Fres,outFileName);
+		for(int i=0;i<oaeFiles.length;i++){
 
+			System.out.println("Analzing: " + oaeFiles[i]); 
+			double[] XFFT= DPOAEAnalysis.getSpectrum
+					(ShortFile.readFile(oaeFiles[i].getAbsolutePath()));
+			//Plot spectrum
+			String outFileName=oaeFiles[i].getAbsolutePath().replace(".raw","")+".png";
+
+			plotSpectrum("DPOAE",XFFT,Fs,Fres,outFileName);
+
+		}
 		//Plot Audiogram
 		//TODO: Extract these results from data!
 		double[] DPOAEData={7.206, -7, 5.083, 13.1,3.616, 17.9,2.542, 11.5,1.818, 17.1};
@@ -49,7 +67,7 @@ public class DPOAEAnalysis {
 
 		String outFileName2="/home/ikaro/dpaudiogram.png";
 		PlotAudiogram audiogram=new PlotAudiogram("test",DPOAEData,noiseFloor,f1Data,f2Data,outFileName2);
-	
+
 	}
 
 
