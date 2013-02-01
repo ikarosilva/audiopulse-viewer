@@ -97,14 +97,4 @@ public class SpectralPlot extends ApplicationFrame {
 		}
 		return new ChartPanel(chart);
 	}      
-	
-	/*
-	public static void main(String[] args) {
-		SpectralPlot demo = new SpectralPlot(
-				"Test");
-		demo.pack();
-		RefineryUtilities.centerFrameOnScreen(demo);
-		demo.setVisible(true);
-	}
-	*/
 }
