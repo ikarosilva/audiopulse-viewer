@@ -1,17 +1,9 @@
 package org.audiopulse.analysis;
 
-import java.awt.image.BufferedImage;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-
-import javax.imageio.ImageIO;
-
 import org.audiopulse.graphics.SpectralPlot;
 import org.audiopulse.io.ShortFile;
 import org.audiopulse.utilities.SignalProcessing;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.encoders.ImageFormat;
 import org.jfree.ui.RefineryUtilities;
 
 
@@ -23,8 +15,8 @@ public class DPOAEAnalysis {
 	}
 
 	public static void plotSpectrum(String title, double[] Pxx,
-			double Fs, double[] expFreq, String outFileName){
-		SpectralPlot demo = new SpectralPlot(title,Pxx,Fs,expFreq,outFileName);
+			double Fs, double Fres, String outFileName){
+		SpectralPlot demo = new SpectralPlot(title,Pxx,Fs,Fres,outFileName);
 		demo.pack();
 		RefineryUtilities.centerFrameOnScreen(demo);
 		demo.setVisible(true);
@@ -36,13 +28,15 @@ public class DPOAEAnalysis {
 		//Get directory listing 
 		String oaeFile="/home/ikaro/test2.raw";
 		double Fs=8000;
-		double[] expFreq={950,1050};
+		double F1=1000;
+		double F2=1500;
+		double Fres=(2*F1)-F2;
 		System.out.println("Analzing: " + oaeFile); 
 		double[] XFFT= DPOAEAnalysis.getSpectrum(ShortFile.readFile(oaeFile));
 
 		//Plot spectrum
 		String outFileName="/home/ikaro/dpoae.png";
-		plotSpectrum("DPOAE",XFFT,Fs,expFreq,outFileName);
+		plotSpectrum("DPOAE",XFFT,Fs,Fres,outFileName);
 
 
 	}
