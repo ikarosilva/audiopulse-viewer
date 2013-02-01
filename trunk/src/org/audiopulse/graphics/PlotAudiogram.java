@@ -77,15 +77,6 @@ public class PlotAudiogram extends ApplicationFrame {
 		setContentPane(chartPanel);
 	}
 
-	/* From the android client
-	public PlotAudiogram(Context context, String title, double[] DPOAEData, 
-			double[] noiseFloor, double[] f1Data, double[] f2Data) {
-		super(context);
-		final AFreeChart chart = createChart2();
-		setChart(chart);
-	}
-	 */
-
 	public static JPanel createDemoPanel(String title, double[] DPOAEData, 
 			double[] noiseFloor, double[] f1Data, double[] f2Data, String outFileName) {
 		JFreeChart chart = createChart2(title, DPOAEData,noiseFloor, f1Data, f2Data, outFileName);
