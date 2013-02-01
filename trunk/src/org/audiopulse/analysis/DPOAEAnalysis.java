@@ -19,11 +19,12 @@ public class DPOAEAnalysis {
 		//Get directory listing 
 		String oaeFile="/home/ikaro/test2.raw";
 		double Fs=8000;
+		double[] expFreq={950,1050};
 		System.out.println("Analzing: " + oaeFile); 
 		double[] XFFT= DPOAEAnalysis.getSpectrum(ShortFile.readFile(oaeFile));
 		
 		//Plot spectrum
-		SpectralPlot demo = new SpectralPlot("DPOAE",XFFT,Fs);
+		SpectralPlot demo = new SpectralPlot("DPOAE",XFFT,Fs,expFreq);
 		demo.pack();
 		RefineryUtilities.centerFrameOnScreen(demo);
 		demo.setVisible(true);
