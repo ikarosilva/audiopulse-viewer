@@ -3,6 +3,8 @@ package org.audiopulse.graphics;
 
 import java.awt.BasicStroke;
 import java.awt.Paint;
+import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JPanel;
 
@@ -10,6 +12,7 @@ import org.jfree.chart.plot.IntervalMarker;
 import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
+import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.PlotOrientation;
@@ -24,9 +27,9 @@ import org.jfree.ui.LengthAdjustmentType;
 
 public class SpectralPlot extends ApplicationFrame {
 
-	public SpectralPlot(String title,double[] XFFT, double Fs,double[] expFreq) {
+	public SpectralPlot(String title,double[] XFFT, double Fs,double[] expFreq, String outFileName) {
 		super(title);
-		JPanel chartPanel = createDemoPanel(XFFT,Fs, title,expFreq);
+		JPanel chartPanel = createDemoPanel(XFFT,Fs, title,expFreq, outFileName);
 		chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
 		setContentPane(chartPanel);
 	}
@@ -74,8 +77,17 @@ public class SpectralPlot extends ApplicationFrame {
 		result.addSeries(series);
 		return result;
 	}
-	public static JPanel createDemoPanel(double[] XFFT, double Fs, String title,double[] expFreq) {
+	public static JPanel createDemoPanel(double[] XFFT, double Fs, String title,double[] expFreq, String outFileName) {
 		JFreeChart chart = createChart(createDataset(XFFT,Fs), title,expFreq);
+		if(outFileName != null){
+			try {
+				ChartUtilities.saveChartAsPNG(new File(outFileName),chart, 400, 400);
+			} catch (IOException e) {
+				System.err.println("Could not print image to file: " + outFileName);
+				e.printStackTrace();
+			}
+			System.out.println("Saved image to file: " + outFileName);
+		}
 		return new ChartPanel(chart);
 	}      
 	
