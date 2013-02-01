@@ -12,14 +12,13 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
-import org.jfree.ui.RefineryUtilities;
 
     public class Plot extends ApplicationFrame {
 
     	static String title;
         public Plot(String title, double[] timeSeries) {
             super(title);
-            this.title=title;
+            Plot.title=title;
             JPanel chartPanel = createDemoPanel(timeSeries);
             chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
             setContentPane(chartPanel);
@@ -28,7 +27,7 @@ import org.jfree.ui.RefineryUtilities;
       
         public Plot(String title, double[] x, double[] y) {
 			super(title);
-            this.title=title;
+            Plot.title=title;
             JPanel chartPanel = createDemoPanel(x,y);
             chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
             setContentPane(chartPanel);
