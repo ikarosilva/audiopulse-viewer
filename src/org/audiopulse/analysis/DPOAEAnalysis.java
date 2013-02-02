@@ -15,18 +15,26 @@ import org.jfree.ui.RefineryUtilities;
 
 public class DPOAEAnalysis {
 
-	public static double[] getSpectrum(short[] x){
-		return SignalProcessing.getSpectrum(x);
+	public static double[][] getSpectrum(short[] x, double Fs){
+		return SignalProcessing.getSpectrum(x, Fs);
 	}
 
-	public static void plotSpectrum(String title, double[] Pxx,
-			double Fs, double Fres, String outFileName){
-		SpectralPlot demo = new SpectralPlot(title,Pxx,Fs,Fres,outFileName);
+	public static void plotSpectrum(String title, double[][] Pxx, double Fres, String outFileName){
+		SpectralPlot demo = new SpectralPlot(title,Pxx,Fres,outFileName);
 		demo.pack();
 		RefineryUtilities.centerFrameOnScreen(demo);
 		demo.setVisible(true);
 	}
 
+	public static double[] getResponse(double[] XFFT, double SpectrumResolution, double F1, double F2, double Fres){
+	
+		for(int n=0;n<XFFT.length;n++){
+			
+		}
+		return null;
+	}
+	
+	
 	public static File[] finder( String dirName){
 		File dir = new File(dirName);
 		return dir.listFiles(new FilenameFilter() { 
@@ -43,20 +51,21 @@ public class DPOAEAnalysis {
 		double Fs=8000;
 		double F1=1000;
 		double F2=1500;
-		double Fres=(2*F1)-F2;	
+		double Fres=(2*F1)-F2;	 //Frequency of the expected response
 		File[] oaeFiles=finder(data_dir);
 		Arrays.sort(oaeFiles);
 
 		for(int i=0;i<oaeFiles.length;i++){
 
 			System.out.println("Analyzing raw file: " + oaeFiles[i]); 
-			double[] XFFT= DPOAEAnalysis.getSpectrum
-					(ShortFile.readFile(oaeFiles[i].getAbsolutePath()));
+			double[][] XFFT= DPOAEAnalysis.getSpectrum
+					(ShortFile.readFile(oaeFiles[i].getAbsolutePath()),Fs);
 			//Plot spectrum
 			String outFileName=oaeFiles[i].getAbsolutePath().replace(".raw","")+".png";
-			plotSpectrum("DPOAE",XFFT,Fs,Fres,outFileName);
+			plotSpectrum("DPOAE",XFFT,Fres,outFileName);
 
 		}
+		/*
 		//Plot Audiogram
 		//TODO: Extract these results from data!
 		System.out.println("Calculating DPGram Results...");
@@ -68,6 +77,7 @@ public class DPOAEAnalysis {
 		String outFileName2=data_dir+"dpaudiogram.png";
 		PlotAudiogram audiogram=new PlotAudiogram("test",DPOAEData,noiseFloor,f1Data,f2Data,outFileName2);
 		System.out.println("Analysis complete! ");
+		*/
 		System.exit(0);
 	}
 

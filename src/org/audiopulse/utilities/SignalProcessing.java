@@ -50,17 +50,20 @@ public class SignalProcessing {
 		return Math.pow(10, a/20);
 	}
 
-	public static double[] getSpectrum(short[] x){
-		FastFourierTransformer FFT = new FastFourierTransformer(DftNormalization.STANDARD);
+	public static double[][] getSpectrum(short[] x, double Fs){
+		FastFourierTransformer FFT = new 
+				FastFourierTransformer(DftNormalization.STANDARD);
 		//Calculate the size of averaged waveform
 		//based on the maximum desired frequency for FFT analysis
 		int N=x.length;
 		int SPEC_N=(int) Math.pow(2,Math.floor(Math.log((int) N)/Math.log(2)));
 		double[] winData=new double[SPEC_N];
 		Complex[] tmpFFT=new Complex[SPEC_N];
-		double[] Pxx = new double[SPEC_N/2];
+		double[][] Pxx = new double[2][SPEC_N/2];
 		double tmpPxx;
-		double refMax=0;
+		double SpectrumResolution = Fs/SPEC_N;
+		double REFMAX=(double) Short.MAX_VALUE; //Normalizing value
+		
 		//Break FFT averaging into SPEC_N segments for averaging
 		//Calculate spectrum, variation based on
 		//http://www.mathworks.com/support/tech-notes/1700/1702.html
@@ -76,14 +79,18 @@ public class SignalProcessing {
 			for(int k=0;k<(SPEC_N/2);k++){
 				tmpPxx = tmpFFT[k].abs()/(double)SPEC_N;
 				tmpPxx*=tmpPxx; //Not accurate for the DC & Nyquist, but we are not using it!
-				Pxx[k]=( (i*Pxx[k]) + tmpPxx )/((double) i+1); //averaging
-				refMax= (Pxx[k] > refMax) ? Pxx[k]:refMax;
+				Pxx[1][k]=( (i*Pxx[1][k]) + tmpPxx )/((double) i+1); //averaging
 			}
 		}
 
 		//Convert to dB
-		for(int i=0;i<Pxx.length;i++){
-			Pxx[i]=10*Math.log10(Pxx[i]/refMax);
+		System.out.println("length:"+ Pxx[0].length + ", Res:"+ SpectrumResolution
+				+ ", Max:"+ SpectrumResolution*Pxx[0].length 
+				+ " ,full length= " + x.length + " ,Fs=" + Fs
+				+ " ,spec_n=" + SPEC_N );
+		for(int i=0;i<Pxx[0].length;i++){
+			Pxx[0][i]=SpectrumResolution*i;
+			Pxx[1][i]=10*Math.log10(Pxx[1][i]/REFMAX);
 		}
 		
 		return Pxx;
