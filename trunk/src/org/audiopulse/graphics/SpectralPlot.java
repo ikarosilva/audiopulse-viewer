@@ -29,9 +29,9 @@ public class SpectralPlot extends ApplicationFrame {
 	private static double Fresrange=50;//Range for which to plot the blue region in which 
 									   //we expect a response
 	
-	public SpectralPlot(String title,double[] XFFT, double Fs,double Fres, String outFileName) {
+	public SpectralPlot(String title,double[][] XFFT,double Fres, String outFileName) {
 		super(title);
-		JPanel chartPanel = createDemoPanel(XFFT,Fs, title,Fres, outFileName);
+		JPanel chartPanel = createDemoPanel(XFFT,title,Fres, outFileName);
 		chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
 		setContentPane(chartPanel);
 	}
@@ -73,19 +73,19 @@ public class SpectralPlot extends ApplicationFrame {
 		//where we expect a response (in Hz)
 		SpectralPlot.Fresrange=x;
 	}
-	public static XYDataset createDataset(double[] XFFT, double Fs) {
+	public static XYDataset createDataset(double[][] XFFT) {
 		XYSeriesCollection result = new XYSeriesCollection();
 		XYSeries series = new XYSeries(1);
 		//Calculate spectrum 
-		double fres= (double) Fs/XFFT.length;
-		for(int n=0;n<(XFFT.length/2);n++){
-			series.add(((double) 0) + n*fres, XFFT[n]);
+		for(int n=0;n<XFFT[0].length;n++){
+			series.add(XFFT[0][n], XFFT[1][n]);
+			//System.out.println("f= " + XFFT[0][n]);
 		}
 		result.addSeries(series);
 		return result;
 	}
-	public static JPanel createDemoPanel(double[] XFFT, double Fs, String title,double Fres, String outFileName) {
-		JFreeChart chart = createChart(createDataset(XFFT,Fs), title,Fres);
+	public static JPanel createDemoPanel(double[][] XFFT, String title,double Fres, String outFileName) {
+		JFreeChart chart = createChart(createDataset(XFFT), title,Fres);
 		if(outFileName != null){
 			try {
 				ChartUtilities.saveChartAsPNG(new File(outFileName),chart, 400, 400);
