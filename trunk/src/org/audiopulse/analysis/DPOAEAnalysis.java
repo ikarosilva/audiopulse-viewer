@@ -26,12 +26,40 @@ public class DPOAEAnalysis {
 		demo.setVisible(true);
 	}
 
-	public static double[] getResponse(double[] XFFT, double SpectrumResolution, double F1, double F2, double Fres){
+	public static double[][] getResponse(double[][] XFFT, double F1, 
+			double F2, double Fres){
 	
-		for(int n=0;n<XFFT.length;n++){
+		//Search through the spectrum to get the closest bin 
+		//to the respective frequencies
+		double dminF1=Short.MAX_VALUE,
+				dminF2=Short.MAX_VALUE,dminFres=Short.MAX_VALUE;
+		double dF1, dF2,dFres;
+		//Results will be stored in a matrix where first row is the closest
+		//bin from the FFT wrt the frequency and second row is the power in that
+		//bin. The columns are organized as F1, F2 and Fres
+		double[][] result=new double[2][3];
+		for(int n=0;n<XFFT[0].length;n++){
+			dF1=Math.abs(XFFT[0][n]-F1);
+			dF2=Math.abs(XFFT[0][n]-F2);
+			dFres=Math.abs(XFFT[0][n]-Fres);		
+			if( dF1 < dminF1 ){
+				dminF1=dF1;
+				result[0][0]=n;
+				result[1][0]=XFFT[1][n];
+			}
+			if( dF2 < dminF2 ){
+				dminF2=dF2;
+				result[0][1]=n;
+				result[1][1]=XFFT[1][n];
+			}
+			if( dFres < dminFres ){
+				dminFres=dFres;
+				result[0][2]=n;
+				result[1][2]=XFFT[1][n];
+			}
 			
 		}
-		return null;
+		return result;
 	}
 	
 	
@@ -49,12 +77,14 @@ public class DPOAEAnalysis {
 		//Get directory listing 
 		String data_dir=args[0];
 		double Fs=8000;
-		double F1=1000;
-		double F2=1500;
+		//double F2=2000;;
+		//double F1=F2/1.2;
+		double F2=2016;
+		double F1=1641;
 		double Fres=(2*F1)-F2;	 //Frequency of the expected response
 		File[] oaeFiles=finder(data_dir);
 		Arrays.sort(oaeFiles);
-
+		double[][] results;
 		for(int i=0;i<oaeFiles.length;i++){
 
 			System.out.println("Analyzing raw file: " + oaeFiles[i]); 
@@ -63,7 +93,9 @@ public class DPOAEAnalysis {
 			//Plot spectrum
 			String outFileName=oaeFiles[i].getAbsolutePath().replace(".raw","")+".png";
 			plotSpectrum("DPOAE",XFFT,Fres,outFileName);
-
+			results=getResponse(XFFT,F1,F2,Fres);
+			System.out.println(" F1amp= " + results[1][1] + " ,F2amp= " 
+						+ results[1][1]	+  " ,Fres= " + results[1][2]);
 		}
 		/*
 		//Plot Audiogram

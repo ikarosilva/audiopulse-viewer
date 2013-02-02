@@ -84,10 +84,6 @@ public class SignalProcessing {
 		}
 
 		//Convert to dB
-		System.out.println("length:"+ Pxx[0].length + ", Res:"+ SpectrumResolution
-				+ ", Max:"+ SpectrumResolution*Pxx[0].length 
-				+ " ,full length= " + x.length + " ,Fs=" + Fs
-				+ " ,spec_n=" + SPEC_N );
 		for(int i=0;i<Pxx[0].length;i++){
 			Pxx[0][i]=SpectrumResolution*i;
 			Pxx[1][i]=10*Math.log10(Pxx[1][i]/REFMAX);
