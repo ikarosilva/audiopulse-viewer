@@ -15,8 +15,8 @@ import org.jfree.ui.RefineryUtilities;
 
 public class DPOAEAnalysis {
 
-	public static double[][] getSpectrum(short[] x, double Fs){
-		return SignalProcessing.getSpectrum(x, Fs);
+	public static double[][] getSpectrum(short[] x, double Fs, int epochTime){
+		return SignalProcessing.getSpectrum(x, Fs,epochTime);
 	}
 
 	public static void plotSpectrum(String title, double[][] Pxx, double Fres, String outFileName){
@@ -66,11 +66,16 @@ public class DPOAEAnalysis {
 
 		//Get directory listing 
 		String data_dir=args[0];
-		double Fs=8000, F2=0, F1=0,Fres=0;	 //Frequency of the expected response
+		
+		//Set parameters according to the procedures defined by
+		//Gorga et al 1993,"Otoacoustic Emissions from Normal-hearing and hearing-impaired subject: distortion product responses
+		double Fs=16000, F2=0, F1=0,Fres=0;	 //Frequency of the expected response
+		int epochTime=512; //Size of each epoch from which to do the averaging, this is a trade off between
+		                   //being close the Gorga's value (20.48 ms) and being a power of 2 for FFT analysis and given our Fs. 
 		File[] oaeFiles=finder(data_dir);
 		Arrays.sort(oaeFiles);
 		double[][] results = new double[2][3]; 
-		double tolerance=10; //Tolerance, in Hz, from which to get the closest FFT bin relative to the actual desired frequency
+		double tolerance=50; //Tolerance, in Hz, from which to get the closest FFT bin relative to the actual desired frequency
 		int M=3, fIndex=0; //number of frequencies being tested
 		//The data is sent for plotting in an interleaved fashion
 		//where odd elements are x-axis and even elements are y-axis
@@ -100,7 +105,7 @@ public class DPOAEAnalysis {
 			}
 			
 			double[][] XFFT= DPOAEAnalysis.getSpectrum
-					(ShortFile.readFile(oaeFiles[i].getAbsolutePath()),Fs);
+					(ShortFile.readFile(oaeFiles[i].getAbsolutePath()),Fs,epochTime);
 			//Plot spectrum
 			plotSpectrum("DPOAE",XFFT,Fres,outFileName);
 			tmpResult=getResponse(XFFT,F1,tolerance);
