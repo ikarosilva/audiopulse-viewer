@@ -55,7 +55,7 @@ public class SignalProcessing {
 				FastFourierTransformer(DftNormalization.STANDARD);
 		//Calculate the size of averaged waveform
 		//based on the maximum desired frequency for FFT analysis
-		int N=x.length;
+		int N=(int) Math.round(x.length/1);
 		int SPEC_N=(int) Math.pow(2,Math.floor(Math.log((int) N)/Math.log(2)));
 		double[] winData=new double[SPEC_N];
 		Complex[] tmpFFT=new Complex[SPEC_N];
@@ -73,7 +73,7 @@ public class SignalProcessing {
 			if(i*SPEC_N+SPEC_N > N)
 				break;
 			for (int k=0;k<SPEC_N;k++){
-				winData[k]= (double) x[i*SPEC_N + k]*SpectralWindows.hamming(k,SPEC_N);
+				winData[k]= ((double)x[i*SPEC_N + k]/REFMAX)*SpectralWindows.hamming(k,SPEC_N);
 			}
 			tmpFFT=FFT.transform(winData,TransformType.FORWARD);
 			for(int k=0;k<(SPEC_N/2);k++){
@@ -86,7 +86,7 @@ public class SignalProcessing {
 		//Convert to dB
 		for(int i=0;i<Pxx[0].length;i++){
 			Pxx[0][i]=SpectrumResolution*i;
-			Pxx[1][i]=10*Math.log10(Pxx[1][i]/REFMAX);
+			Pxx[1][i]=10*Math.log10(Pxx[1][i]);
 		}
 		
 		return Pxx;
