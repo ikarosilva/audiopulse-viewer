@@ -50,13 +50,14 @@ public class SignalProcessing {
 		return Math.pow(10, a/20);
 	}
 
-	public static double[][] getSpectrum(short[] x, double Fs){
+	public static double[][] getSpectrum(short[] x, double Fs, int SPEC_N){
 		FastFourierTransformer FFT = new 
 				FastFourierTransformer(DftNormalization.STANDARD);
 		//Calculate the size of averaged waveform
 		//based on the maximum desired frequency for FFT analysis
-		int N=(int) Math.round(x.length/1);
-		int SPEC_N=(int) Math.pow(2,Math.floor(Math.log((int) N)/Math.log(2)));
+		
+		//Calculate the number of sweeps given the epoch time
+		int sweeps=Math.round(x.length/SPEC_N);
 		double[] winData=new double[SPEC_N];
 		Complex[] tmpFFT=new Complex[SPEC_N];
 		double[][] Pxx = new double[2][SPEC_N/2];
@@ -68,9 +69,11 @@ public class SignalProcessing {
 		//Calculate spectrum, variation based on
 		//http://www.mathworks.com/support/tech-notes/1700/1702.html
 
-		//Perform windowing and averaging on the power spectrum
-		for (int i=0; i < N; i++){
-			if(i*SPEC_N+SPEC_N > N)
+		//Perform windowing and running average on the power spectrum
+		//averaging is done by filling a buffer (windData) of size SPECN_N at offset i*SPEC_N
+		//until the end of the data.
+		for (int i=0; i < sweeps; i++){
+			if(i*SPEC_N+SPEC_N > x.length)
 				break;
 			for (int k=0;k<SPEC_N;k++){
 				winData[k]= ((double)x[i*SPEC_N + k]/REFMAX)*SpectralWindows.hamming(k,SPEC_N);
