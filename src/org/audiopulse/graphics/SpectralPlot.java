@@ -26,7 +26,7 @@ import org.jfree.ui.LengthAdjustmentType;
 
 public class SpectralPlot extends ApplicationFrame {
 
-	private static double Fresrange=50;//Range for which to plot the blue region in which 
+	private static double Fresrange=95;//Range for which to plot the blue region in which 
 									   //we expect a response
 	
 	public SpectralPlot(String title,double[][] XFFT,double Fres, String outFileName) {

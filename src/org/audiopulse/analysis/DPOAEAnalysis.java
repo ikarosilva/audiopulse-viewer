@@ -49,9 +49,25 @@ public class DPOAEAnalysis {
 			System.err.println("Results are innacurate because frequency tolerance has been exceeded. Desired F= "
 					+ desF +" closest F= " + actF);
 		}
+		//System.out.println("F= "+ desF +" closest F= " + XFFT[0][(int)result[0]]);
 		return result;
 	}
 	
+	public static double getNoiseLevel(double[][] XFFT, int Find){
+		
+		//Estimates noise by getting the average level of 3 frequency bins above and below
+		//the desired response frequency (desF)
+		double noiseLevel=0;	
+		//Get the average from 3 bins below and 3 bins above
+		for(int i=0;i<=6;i++){
+			if(i !=3){
+			noiseLevel+= XFFT[1][(Find+i-3)];
+			}
+		}
+		System.out.println("Max=" + ( XFFT[0][(Find+3)]-XFFT[0][Find] ));
+		
+		return (noiseLevel/6);
+	}
 	
 	public static File[] finder( String dirName){
 		File dir = new File(dirName);
@@ -59,7 +75,6 @@ public class DPOAEAnalysis {
 			public boolean accept(File dir, String filename)
 			{ return filename.endsWith(".raw"); }
 		} );
-
 	}
 
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
@@ -74,7 +89,7 @@ public class DPOAEAnalysis {
 		                   //being close the Gorga's value (20.48 ms) and being a power of 2 for FFT analysis and given our Fs. 
 		File[] oaeFiles=finder(data_dir);
 		Arrays.sort(oaeFiles);
-		double[][] results = new double[2][3]; 
+		double[] results = new double[3]; 
 		double tolerance=50; //Tolerance, in Hz, from which to get the closest FFT bin relative to the actual desired frequency
 		int M=3, fIndex=0; //number of frequencies being tested
 		//The data is sent for plotting in an interleaved fashion
@@ -84,6 +99,7 @@ public class DPOAEAnalysis {
 		double[] f1Data=new double[2*M];
 		double[] f2Data=new double[2*M];
 		double[] tmpResult=new double[2];
+		int FresIndex;
 		
 		for(int i=0;i<oaeFiles.length;i++){
 			String outFileName=oaeFiles[i].getAbsolutePath().replace(".raw","")+".png";		
@@ -109,28 +125,26 @@ public class DPOAEAnalysis {
 			//Plot spectrum
 			plotSpectrum("DPOAE",XFFT,Fres,outFileName);
 			tmpResult=getResponse(XFFT,F1,tolerance);
-			results[0][0]=tmpResult[0];
-			results[1][0]=tmpResult[1];
+			results[0]=tmpResult[1];
 			
 			tmpResult=getResponse(XFFT,F2,tolerance);
-			results[0][1]=tmpResult[0];
-			results[1][1]=tmpResult[1];
+			results[1]=tmpResult[1];
 			
 			tmpResult=getResponse(XFFT,Fres,tolerance);
-			results[0][2]=tmpResult[0];
-			results[1][2]=tmpResult[1];
+			results[2]=tmpResult[1];
+			FresIndex =(int) tmpResult[0]; //the closest FFT bin to the desired frequency that we want
 			
 			f1Data[fIndex]=F2;
-			f1Data[fIndex+1]=Math.round(results[1][0]);
+			f1Data[fIndex+1]=Math.round(results[0]);
 			
 			f2Data[fIndex]=F2;
-			f2Data[fIndex+1]=Math.round(results[1][1]);
+			f2Data[fIndex+1]=Math.round(results[1]);
 			
 			DPOAEData[fIndex]=F2;
-			DPOAEData[fIndex+1]=Math.round(results[1][2]);
+			DPOAEData[fIndex+1]=Math.round(results[2]);
 			
 			noiseFloor[fIndex]=F2;
-			noiseFloor[fIndex+1]=Math.round(results[1][2]-10);
+			noiseFloor[fIndex+1]=getNoiseLevel(XFFT,FresIndex);
 		}
 		
 		String outFileName2=data_dir+"dpaudiogram.png";		 		
