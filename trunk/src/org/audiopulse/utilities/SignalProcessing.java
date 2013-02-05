@@ -32,6 +32,39 @@ public class SignalProcessing {
 		return rms;
 	}
 
+	public static boolean isclipped(short[] rawData, double Fs) {
+		// TODO: Crude method to detect clipping of the waveform by 
+		//using a moving window and checking if all samples in that window
+		//are the same value. We are essentially checking if the signal 
+		//has any "flat-regions" of any sort (the playback can be clipped 
+		//while the recording can still be ok).
+		
+		double winSize=0.01; //window size in milliseconds
+		int window=(int) Math.round(Fs*winSize);
+		double sum=0;
+		double lastSample=0;
+		double currentSample=0;
+		boolean clipped=false;
+		for(int i=0;i<rawData.length;i++){
+			currentSample=Math.abs(rawData[i]);
+			if(i> (window-1)){
+				lastSample=Math.abs(rawData[i-window]);
+				sum-=lastSample;
+				sum+=currentSample;
+				//TODO : Maybe allow for some uncertainty around 1 because
+				//play back can be clipped but rec noise may mask some of it.
+				if(sum/(currentSample*window) == 1){
+					clipped=true;
+					break;
+				}
+			}else {
+				//Initial transient stage, filling the filter
+				sum+=currentSample;
+			}
+		}
+		return clipped;
+	}
+
 	@Deprecated 	// as written, this is linear scaling in power (not rms) to dB (not dBu)
 	public static double rms2dBU(double x){
 		return 10*Math.log10(x);
@@ -55,7 +88,7 @@ public class SignalProcessing {
 				FastFourierTransformer(DftNormalization.STANDARD);
 		//Calculate the size of averaged waveform
 		//based on the maximum desired frequency for FFT analysis
-		
+
 		//Calculate the number of sweeps given the epoch time
 		int sweeps=Math.round(x.length/SPEC_N);
 		double[] winData=new double[SPEC_N];
@@ -64,7 +97,7 @@ public class SignalProcessing {
 		double tmpPxx;
 		double SpectrumResolution = Fs/SPEC_N;
 		double REFMAX=(double) Short.MAX_VALUE; //Normalizing value
-		
+
 		//Break FFT averaging into SPEC_N segments for averaging
 		//Calculate spectrum, variation based on
 		//http://www.mathworks.com/support/tech-notes/1700/1702.html
@@ -91,7 +124,7 @@ public class SignalProcessing {
 			Pxx[0][i]=SpectrumResolution*i;
 			Pxx[1][i]=10*Math.log10(Pxx[1][i]);
 		}
-		
+
 		return Pxx;
 	}
 
