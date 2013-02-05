@@ -1,8 +1,64 @@
+/* ===========================================================
+ * WFDB Java : Interface to WFDB Applications.
+ *              
+ * ===========================================================
+ *
+ * (C) Copyright 2012, by Ikaro Silva
+ *
+ * Project Info:
+ *    Code: http://code.google.com/p/wfdb-java/
+ *    WFDB: http://www.physionet.org/physiotools/wfdb.shtml
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *
+ *
+ * Original Author:  Ikaro Silva
+ * Contributor(s):   -;
+ *
+ * Changes
+ * -------
+ * Check: http://code.google.com/p/wfdb-java/list
+ */ 
 
-    package org.audiopulse.graphics;
 
+/* Example on how to plot a ECG signal
+ * 
+ * This example requires the package jfreechar-1.0.14.jar
+ * 
+ * Available for download at in the download area of the wfdb-java Google project:
+ * 
+ * http://code.google.com/p/wfdb-java/downloads/detail?name=jfreechart-1.0.14.zip&can=2&q=
+ * 
+ * To install external package in Eclipse from a working "wfdb-java" project:
+ * 
+ * 1. Right click in the "src" folder under the wfdb-java project in Eclipse
+ * 
+ * 2. Select:
+ * 	   Build Path -> Configure Build Path
+ * 
+ * 3. Go to:
+ * 		"Libraries" Tab -> Add External Jars
+ * 
+ * select the jfreechar-1.0.14.jar and hit "Ok".
+ * 
+ * 4. Go to the "Order and Export" Tab, check "jfreechar-1.0.14.jar" and hit "Ok". 
+ */
+
+package org.audiopulse.graphics;
+import java.util.ArrayList;
 import javax.swing.JPanel;
-
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -12,85 +68,99 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
+import org.jfree.ui.RefineryUtilities;
 
-    public class Plot extends ApplicationFrame {
 
-    	static String title;
-        public Plot(String title, double[] timeSeries) {
-            super(title);
-            Plot.title=title;
-            JPanel chartPanel = createDemoPanel(timeSeries);
-            chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
-            setContentPane(chartPanel);
-        }
-       
-      
-        public Plot(String title, double[] x, double[] y) {
-			super(title);
-            Plot.title=title;
-            JPanel chartPanel = createDemoPanel(x,y);
-            chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
-            setContentPane(chartPanel);
+public class Plot extends ApplicationFrame {
+
+	public Plot(String title, String timeLabel, 
+			String amplitudeLabel, ArrayList[] data) {
+		super(title);
+		JPanel chartPanel = createDemoPanel(title,timeLabel,
+				amplitudeLabel,data);
+		chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+		setContentPane(chartPanel);
+	}
+
+
+	public Plot(String title, String timeLabel,
+			String amplitudeLabel, short[] rawData) {
+		super(title);
+		JPanel chartPanel = createDemoPanel(title,timeLabel,
+				amplitudeLabel,rawData);
+		chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+		setContentPane(chartPanel);
+	}
+
+	private static JFreeChart createChart(XYDataset dataset, String title,
+			String timeLabel, String amplitudeLabel) {
+		// create the chart...
+		JFreeChart chart = ChartFactory.createXYLineChart(
+				title,       // chart title
+				timeLabel,                      // x axis label
+				amplitudeLabel,                      // y axis label
+				dataset,                  // data
+				PlotOrientation.VERTICAL, 
+				true,                     // include legend
+				true,                     // tooltips
+				false                     // urls
+				);
+
+		XYPlot plot = (XYPlot) chart.getPlot();
+		plot.getDomainAxis().setLowerMargin(0.0);
+		plot.getDomainAxis().setUpperMargin(0.0);
+		return chart;
+	}
+
+	public static XYDataset createDataset(ArrayList[] data) {
+		//XYDataset result = DatasetUtilities.sampleFunction2D(new X2(),
+		//        -4.0, 4.0, 40, "f(x)");
+		XYSeriesCollection result = new XYSeriesCollection();
+		XYSeries series = new XYSeries(1);
+		//Insert data into plotting series 
+		for(int n=0;n<data[1].size();n++){
+			series.add(Double.valueOf((String) data[0].get(n)),
+					Double.valueOf((String) data[1].get(n)));
 		}
+		result.addSeries(series);
+		return result;
+	}
+	public static XYDataset createDataset(short[] data) {
+		//XYDataset result = DatasetUtilities.sampleFunction2D(new X2(),
+		//        -4.0, 4.0, 40, "f(x)");
+		XYSeriesCollection result = new XYSeriesCollection();
+		XYSeries series = new XYSeries(1);
+		//Insert data into plotting series 
+		for(int n=0;n<data.length;n++){
+			series.add(n,data[n]);
+		}
+		result.addSeries(series);
+		return result;
+	}
 
+	/**
+	 * Creates a panel for the demo (used by SuperDemo.java).
+	 *
+	 * @return A panel.
+	 */
+	public static JPanel createDemoPanel(String title,String timeLabel, 
+			String amplitudeLabel,ArrayList[] data) {
+		JFreeChart chart = createChart(createDataset(data),title,timeLabel,
+				amplitudeLabel);
+		return new ChartPanel(chart);
+	}
 
-		private static JFreeChart createChart(XYDataset dataset) {
-            // create the chart...
-            JFreeChart chart = ChartFactory.createXYLineChart(
-                title,       // chart title
-                "X",                      // x axis label
-                "Y",                      // y axis label
-                dataset,                  // data
-                PlotOrientation.VERTICAL, 
-                true,                     // include legend
-                true,                     // tooltips
-                false                     // urls
-            );
+	public static JPanel createDemoPanel(String title,String timeLabel, 
+			String amplitudeLabel,short[] data) {
+		JFreeChart chart = createChart(createDataset(data),title,timeLabel,
+				amplitudeLabel);
+		return new ChartPanel(chart);
+	}
+	
+	public void showPlot(){
+		this.pack();
+		RefineryUtilities.centerFrameOnScreen(this);
+		this.setVisible(true);
+	}
 
-            XYPlot plot = (XYPlot) chart.getPlot();
-            plot.getDomainAxis().setLowerMargin(0.0);
-            plot.getDomainAxis().setUpperMargin(0.0);
-            return chart;
-        }
-       
-        private static XYDataset createDataset(double[] timeSeries) {
-        	XYSeriesCollection result = new XYSeriesCollection();
-        	XYSeries series = new XYSeries(1);
-    		for(int n=0;n<timeSeries.length-1;n++){
-    			//System.out.println("n=" +n + " data[n]=" + data[n]);
-    			if(timeSeries[n] !=0)
-    			series.add(n,timeSeries[n]);
-    			//series.add(n,data[n]);
-    		}
-        	result.addSeries(series);
-            return result;
-        }
-        
-        private static XYDataset createDataset(double[] x,double[] y) {
-        	XYSeriesCollection result = new XYSeriesCollection();
-        	XYSeries series = new XYSeries(1);
-    		for(int n=0;n<x.length-1;n++){
-    			if(x[n] !=0)
-    			series.add(x[n],y[n]);
-    		}
-        	result.addSeries(series);
-            return result;
-        }
-
-        /**
-         * Creates a panel for the demo (used by SuperDemo.java).
-         *
-         * @return A panel.
-         */
-        private static JPanel createDemoPanel(double[] timeSeries) {
-            JFreeChart chart = createChart(createDataset(timeSeries));
-            return new ChartPanel(chart);
-        }
-        private static JPanel createDemoPanel(double[] x, double[] y) {
-            JFreeChart chart = createChart(createDataset(x,y));
-            return new ChartPanel(chart);
-        }
-       
-
-
-    }
+}
