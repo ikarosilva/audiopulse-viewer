@@ -86,7 +86,7 @@ public class DPOAEAnalysis {
 		} );
 	}
 	
-	public static void main(String[] args) throws Exception {
+	public static void runAnalysis(String[] args) throws Exception {
 
 		System.out.println("Analyzing results of compressed file...");
 		//Get directory listing 
@@ -177,9 +177,12 @@ public class DPOAEAnalysis {
 		System.out.println("4kHz:\t" + "DPOAE= " + DPOAEData[5]
 				+ "\tDPOAE - Noise= " +((double)Math.round((DPOAEData[5]-noiseFloor[5])*10)/10 ));
 		System.out.println("Analysis complete! ");
-		System.exit(0);
 	}
 
+	public static void main(String[] args) throws Exception {
+		DPOAEAnalysis.runAnalysis(args);
+		System.exit(0);
+	}
 }
 
 
