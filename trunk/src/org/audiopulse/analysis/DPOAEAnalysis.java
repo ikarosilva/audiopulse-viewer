@@ -114,7 +114,6 @@ public class DPOAEAnalysis {
 		
 		for(int i=0;i<oaeFiles.length;i++){
 			String outFileName=oaeFiles[i].getAbsolutePath().replace(".raw","")+".png";		
-			//Determine which frequency was tested
 			//TODO: Right now the analysis is based on the Handbook of Otoacoustic Emissions Book by Hall
 			//These parameters (F1,F2,Fres) should be loaded dynamically based on the protocol description
 			//on the acompanying XML File
