@@ -9,6 +9,7 @@ import java.util.Arrays;
 import org.audiopulse.graphics.Plot;
 import org.audiopulse.graphics.PlotAudiogram;
 import org.audiopulse.graphics.SpectralPlot;
+import org.audiopulse.io.PackageDataThreadRunnable;
 import org.audiopulse.io.ShortFile;
 import org.audiopulse.utilities.SignalProcessing;
 import org.jfree.ui.RefineryUtilities;
@@ -74,8 +75,6 @@ public class DPOAEAnalysis {
 				noiseLevel+= XFFT[1][(Find+i-3)];
 			}
 		}
-		System.out.println("Max=" + ( XFFT[0][(Find+3)]-XFFT[0][Find] ));
-
 		return (noiseLevel/6);
 	}
 
@@ -87,17 +86,18 @@ public class DPOAEAnalysis {
 		} );
 	}
 	
-	public static void main(String[] args) throws IOException, ClassNotFoundException, DPOAEAnalysisException {
+	public static void main(String[] args) throws Exception {
 
+		System.out.println("Analyzing results of compressed file...");
 		//Get directory listing 
-		String data_dir=args[0];
-
+		String dataDir=PackageDataThreadRunnable.unpackData(args[0]);
+		
 		//Set parameters according to the procedures defined by
 		//Gorga et al 1993,"Otoacoustic Emissions from Normal-hearing and hearing-impaired subject: distortion product responses
 		double Fs=16000, F2=0, F1=0,Fres=0;	 //Frequency of the expected response
 		int epochTime=512; //Size of each epoch from which to do the averaging, this is a trade off between
 		//being close the Gorga's value (20.48 ms) and being a power of 2 for FFT analysis and given our Fs. 
-		File[] oaeFiles=finder(data_dir);
+		File[] oaeFiles=finder(dataDir);
 		Arrays.sort(oaeFiles);
 		double[] results = new double[3]; 
 		double tolerance=50; //Tolerance, in Hz, from which to get the closest FFT bin relative to the actual desired frequency
@@ -111,7 +111,7 @@ public class DPOAEAnalysis {
 		double[] tmpResult=new double[2];
 		int FresIndex;
 		short[] rawData=null;
-
+		
 		for(int i=0;i<oaeFiles.length;i++){
 			String outFileName=oaeFiles[i].getAbsolutePath().replace(".raw","")+".png";		
 			//Determine which frequency was tested
@@ -141,7 +141,7 @@ public class DPOAEAnalysis {
 				throw new DPOAEAnalysisException("Corrupted (Clipped) data: " + outFileName);
 			}
 
-			/*
+			
 			double[][] XFFT= DPOAEAnalysis.getSpectrum(rawData,Fs,epochTime);
 			//Plot spectrum
 			plotSpectrum("DPOAE",XFFT,Fres,outFileName);
@@ -166,18 +166,19 @@ public class DPOAEAnalysis {
 
 			noiseFloor[fIndex]=F2;
 			noiseFloor[fIndex+1]=getNoiseLevel(XFFT,FresIndex);
-			 */
-		}
-		/*
+			 
+		}	
 
-		String outFileName2=data_dir+"dpaudiogram.png";		 		
-		System.out.println("f1=" + f1Data[1]+"f2=" + f2Data[1]+"res=" + DPOAEData[1]);
-		System.out.println("f1=" + f1Data[3]+"f2=" + f2Data[3]+"res=" + DPOAEData[3]);
-		System.out.println("f1=" + f1Data[5]+"f2=" + f2Data[5]+"res=" + DPOAEData[5]);
+		String outFileName2=dataDir+File.separator+"DPAudiogram.png";		 		
 		PlotAudiogram audiogram=new PlotAudiogram("DPGram",DPOAEData,noiseFloor,f1Data,f2Data,outFileName2);
+		System.out.println("2kHz:\t" + "DPOAE= " + DPOAEData[1] 
+				+ "\tDPOAE - Noise= " +((double)Math.round((DPOAEData[1]-noiseFloor[1])*10)/10));
+		System.out.println("3kHz:\t" + "DPOAE= " + DPOAEData[3]
+				+ "\tDPOAE - Noise= " +((double)Math.round((DPOAEData[3]-noiseFloor[3])*10)/10));
+		System.out.println("4kHz:\t" + "DPOAE= " + DPOAEData[5]
+				+ "\tDPOAE - Noise= " +((double)Math.round((DPOAEData[5]-noiseFloor[5])*10)/10 ));
 		System.out.println("Analysis complete! ");
 		System.exit(0);
-		 */
 	}
 
 }

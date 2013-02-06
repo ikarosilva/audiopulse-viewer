@@ -40,6 +40,7 @@
 package org.audiopulse.io;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -47,7 +48,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+
 
 //TODO: Translate all message (informMiddle informEnd) Strings into the Resource folder for easy changes to other languages
 public class PackageDataThreadRunnable implements Runnable
@@ -101,6 +104,40 @@ public class PackageDataThreadRunnable implements Runnable
 			zos.close();
 		}
 		return new File(zipFileName);
+	}
+
+	public static String unpackData(String inputFile) throws Exception {
+		//Unzips data into the zip file directory
+		if(! inputFile.endsWith(".zip")){
+			throw new Exception("Input File is NOT a zipped file: " + inputFile);
+		}
+		String outFile = inputFile.replace(".zip",""); 
+		byte[] buffer = new byte[1024];
+		try{
+			File outFolder = new File(outFile);
+			if(!outFolder.exists()){
+				outFolder.mkdir();
+			}
+			ZipInputStream zis =new ZipInputStream(new FileInputStream(inputFile));
+			ZipEntry entry = zis.getNextEntry();
+			while(entry!=null){
+				String fileName = entry.getName();
+				File newFile = new File(outFile + File.separator + fileName);
+				new File(newFile.getParent()).mkdirs();
+				FileOutputStream fos = new FileOutputStream(newFile);             
+				int length;
+				while ((length = zis.read(buffer)) > 0) {
+					fos.write(buffer, 0, length);
+				}
+				fos.close();   
+				entry = zis.getNextEntry();
+			}
+			zis.closeEntry();
+			zis.close();
+		}catch(IOException ex){
+			ex.printStackTrace(); 
+		}  
+		return outFile;	
 	}
 
 	public File getOutFile(){
