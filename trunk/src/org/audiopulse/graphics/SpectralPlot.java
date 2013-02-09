@@ -2,16 +2,10 @@
 package org.audiopulse.graphics;
 
 import java.awt.BasicStroke;
-import java.io.File;
-import java.io.IOException;
-
-import javax.swing.JPanel;
 
 import org.jfree.chart.plot.IntervalMarker;
 import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.PlotOrientation;
@@ -20,22 +14,45 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.Layer;
 import org.jfree.ui.LengthAdjustmentType;
 
-public class SpectralPlot extends ApplicationFrame {
+public class SpectralPlot implements ChartRenderer{
 
 	private static double Fresrange=95;//Range for which to plot the blue region in which 
 									   //we expect a response
 	
-	public SpectralPlot(String title,double[][] XFFT,double Fres, String outFileName) {
-		super(title);
-		JPanel chartPanel = createDemoPanel(XFFT,title,Fres, outFileName);
-		chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
-		setContentPane(chartPanel);
+	private final String title;
+	private final double Fres;
+	private final XYDataset dataset;
+	
+	public SpectralPlot(String title, XYDataset data, double Fres) {
+		this.title = title;
+		this.dataset = data;
+		this.Fres = Fres;
 	}
-
+	
+	/**
+	 * Renders this object's data as a chart.
+	 */
+	public JFreeChart render() {
+		// TODO Auto-generated method stub
+		return createChart(dataset,title,Fres);
+	}  
+	
+	/**
+	 * Returns a new SpectralPlot object with and converts any data into an 
+	 * XYDataset.
+	 * 
+	 * @param title
+	 * @param XFFT
+	 * @param Fres
+	 * @return
+	 */
+	public static SpectralPlot fromData(String title,double[][] XFFT,double Fres){
+		return new SpectralPlot(title, createDataset(XFFT), Fres);
+	}
+	
 	private static JFreeChart createChart(XYDataset dataset, String title, double Fres) {
 		// create the chart...
 		JFreeChart chart = ChartFactory.createXYLineChart(
@@ -73,6 +90,7 @@ public class SpectralPlot extends ApplicationFrame {
 		//where we expect a response (in Hz)
 		SpectralPlot.Fresrange=x;
 	}
+	
 	public static XYDataset createDataset(double[][] XFFT) {
 		XYSeriesCollection result = new XYSeriesCollection();
 		XYSeries series = new XYSeries(1);
@@ -84,17 +102,5 @@ public class SpectralPlot extends ApplicationFrame {
 		result.addSeries(series);
 		return result;
 	}
-	public static JPanel createDemoPanel(double[][] XFFT, String title,double Fres, String outFileName) {
-		JFreeChart chart = createChart(createDataset(XFFT), title,Fres);
-		if(outFileName != null){
-			try {
-				ChartUtilities.saveChartAsPNG(new File(outFileName),chart, 400, 400);
-			} catch (IOException e) {
-				System.err.println("Could not print image to file: " + outFileName);
-				e.printStackTrace();
-			}
-			System.out.println("Saved image to file: " + outFileName);
-		}
-		return new ChartPanel(chart);
-	}      
+  
 }

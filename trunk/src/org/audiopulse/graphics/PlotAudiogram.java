@@ -43,13 +43,8 @@ package org.audiopulse.graphics;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.io.File;
-import java.io.IOException;
 
-import javax.swing.JPanel;
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
@@ -59,37 +54,42 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.data.xy.YIntervalSeries;
 import org.jfree.data.xy.YIntervalSeriesCollection;
-//import org.jfree.graphics.SolidColor;
-import org.jfree.ui.ApplicationFrame;
 
 
 /**
  * DeviationRendererDemo02View
  */
-public class PlotAudiogram extends ApplicationFrame {
+public class PlotAudiogram implements ChartRenderer{
 
+	private final String title; 
+	private final double[] DPOAEData; 
+	private final double[] noiseFloor;
+	private final double[] f1Data; 
+	private final double[] f2Data;
+	
+	/**
+	 * Creates a new PlotAudiogram which will render it's data as a chart object.
+	 * 
+	 * @param title
+	 * @param DPOAEData
+	 * @param noiseFloor
+	 * @param f1Data
+	 * @param f2Data
+	 */
 	public PlotAudiogram(String title, double[] DPOAEData, 
-			double[] noiseFloor, double[] f1Data, double[] f2Data, String outFileName) {
-		super(title);
-
-		JPanel chartPanel = createDemoPanel(title, DPOAEData,noiseFloor, f1Data, f2Data, outFileName);
-		chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
-		setContentPane(chartPanel);
+			double[] noiseFloor, double[] f1Data, double[] f2Data){
+		this.title = title;
+		this.DPOAEData = DPOAEData;
+		this.noiseFloor = noiseFloor;
+		this.f1Data = f1Data;
+		this.f2Data = f2Data;
 	}
-
-	public static JPanel createDemoPanel(String title, double[] DPOAEData, 
-			double[] noiseFloor, double[] f1Data, double[] f2Data, String outFileName) {
-		JFreeChart chart = createChart2(title, DPOAEData,noiseFloor, f1Data, f2Data, outFileName);
-		if(outFileName != null){
-			try {
-				ChartUtilities.saveChartAsPNG(new File(outFileName),chart, 400, 400);
-			} catch (IOException e) {
-				System.err.println("Could not print image to file: " + outFileName);
-				e.printStackTrace();
-			}
-			System.out.println("Saved image to file: " + outFileName);
-		}
-		return new ChartPanel(chart);
+	
+	/**
+	 * Renders this object's data as a chart.
+	 */
+	public JFreeChart render() {
+		return createChart2(title, DPOAEData,noiseFloor, f1Data, f2Data);
 	}
 
 	private static YIntervalSeriesCollection createDataset2() {
@@ -141,7 +141,7 @@ public class PlotAudiogram extends ApplicationFrame {
 	}
 
 	public static JFreeChart createChart2(String title, double[] DPOAEData, 
-			double[] noiseFloor, double[] f1Data, double[] f2Data, String outFileName) {
+			double[] noiseFloor, double[] f1Data, double[] f2Data) {
 		XYDataset data = createDataset(DPOAEData,noiseFloor,f1Data,f2Data);
 		JFreeChart chart = ChartFactory.createXYLineChart(
 				title, // chart title

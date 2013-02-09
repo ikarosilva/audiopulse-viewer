@@ -58,40 +58,46 @@
 
 package org.audiopulse.graphics;
 import java.util.ArrayList;
-import javax.swing.JPanel;
+
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYDataset;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.ui.ApplicationFrame;
-import org.jfree.ui.RefineryUtilities;
 
+/**
+ *
+ */
+public class Plot {
 
-public class Plot extends ApplicationFrame {
-
+	private final String title;
+	private final String timeLabel; 
+	private final String amplitudeLabel;
+	private final XYDataset dataset;
+	
+	/**
+	 * Constructs a new plot object with title, labels, and data
+	 * 
+	 * @param title
+	 * @param timeLabel
+	 * @param amplitudeLabel
+	 * @param data
+	 */
 	public Plot(String title, String timeLabel, 
-			String amplitudeLabel, ArrayList[] data) {
-		super(title);
-		JPanel chartPanel = createDemoPanel(title,timeLabel,
-				amplitudeLabel,data);
-		chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
-		setContentPane(chartPanel);
+			String amplitudeLabel, XYDataset data) {
+		this.title = title;
+		this.timeLabel = timeLabel;
+		this.amplitudeLabel = amplitudeLabel;
+		this.dataset = data;
 	}
 
-
-	public Plot(String title, String timeLabel,
-			String amplitudeLabel, short[] rawData) {
-		super(title);
-		JPanel chartPanel = createDemoPanel(title,timeLabel,
-				amplitudeLabel,rawData);
-		chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
-		setContentPane(chartPanel);
+	/**
+	 * Renders this object's data as a chart.
+	 */
+	public JFreeChart render(){
+		return Plot.createChart(dataset, title, timeLabel, amplitudeLabel);
 	}
-
+	
 	private static JFreeChart createChart(XYDataset dataset, String title,
 			String timeLabel, String amplitudeLabel) {
 		// create the chart...
@@ -112,55 +118,33 @@ public class Plot extends ApplicationFrame {
 		return chart;
 	}
 
-	public static XYDataset createDataset(ArrayList[] data) {
-		//XYDataset result = DatasetUtilities.sampleFunction2D(new X2(),
-		//        -4.0, 4.0, 40, "f(x)");
-		XYSeriesCollection result = new XYSeriesCollection();
-		XYSeries series = new XYSeries(1);
-		//Insert data into plotting series 
-		for(int n=0;n<data[1].size();n++){
-			series.add(Double.valueOf((String) data[0].get(n)),
-					Double.valueOf((String) data[1].get(n)));
-		}
-		result.addSeries(series);
-		return result;
-	}
-	public static XYDataset createDataset(short[] data) {
-		//XYDataset result = DatasetUtilities.sampleFunction2D(new X2(),
-		//        -4.0, 4.0, 40, "f(x)");
-		XYSeriesCollection result = new XYSeriesCollection();
-		XYSeries series = new XYSeries(1);
-		//Insert data into plotting series 
-		for(int n=0;n<data.length;n++){
-			series.add(n,data[n]);
-		}
-		result.addSeries(series);
-		return result;
+	/**
+	 * Returns a new Plot object with and converts any data into an XYDataset.
+	 * 
+	 * @param title the plot title
+	 * @param timeLabel 
+	 * @param amplitudeLabel
+	 * @param data data that will be plotted
+	 * @return
+	 */
+	public static Plot fromData(String title, String timeLabel,
+			String amplitudeLabel, ArrayList[] data) {
+		XYDataset dataset = PlotUtils.createDataset(data);
+		return new Plot(amplitudeLabel, amplitudeLabel, amplitudeLabel, dataset);
 	}
 
 	/**
-	 * Creates a panel for the demo (used by SuperDemo.java).
-	 *
-	 * @return A panel.
+	 * Returns a new Plot object with and converts any raw data into an XYDataset.
+	 * 
+	 * @param title the plot title
+	 * @param timeLabel 
+	 * @param amplitudeLabel
+	 * @param data data that will be plotted
+	 * @return
 	 */
-	public static JPanel createDemoPanel(String title,String timeLabel, 
-			String amplitudeLabel,ArrayList[] data) {
-		JFreeChart chart = createChart(createDataset(data),title,timeLabel,
-				amplitudeLabel);
-		return new ChartPanel(chart);
+	public static Plot fromData(String title, String timeLabel,
+			String amplitudeLabel, short[] data) {
+		XYDataset dataset = PlotUtils.createDataset(data);
+		return new Plot(amplitudeLabel, amplitudeLabel, amplitudeLabel, dataset);
 	}
-
-	public static JPanel createDemoPanel(String title,String timeLabel, 
-			String amplitudeLabel,short[] data) {
-		JFreeChart chart = createChart(createDataset(data),title,timeLabel,
-				amplitudeLabel);
-		return new ChartPanel(chart);
-	}
-	
-	public void showPlot(){
-		this.pack();
-		RefineryUtilities.centerFrameOnScreen(this);
-		this.setVisible(true);
-	}
-
 }
