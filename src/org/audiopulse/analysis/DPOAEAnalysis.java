@@ -1,16 +1,20 @@
 package org.audiopulse.analysis;
 
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.audiopulse.graphics.Plot;
 import org.audiopulse.graphics.PlotAudiogram;
+import org.audiopulse.graphics.PlotUtils;
 import org.audiopulse.graphics.SpectralPlot;
 import org.audiopulse.io.PackageDataThreadRunnable;
 import org.audiopulse.io.ShortFile;
+import org.audiopulse.ui.PlotAudiogramFrame;
+import org.audiopulse.ui.PlotFrame;
+import org.audiopulse.ui.SpectralPlotFrame;
 import org.audiopulse.utilities.SignalProcessing;
 import org.jfree.ui.RefineryUtilities;
 
@@ -26,15 +30,36 @@ class DPOAEAnalysisException extends Exception {
 
 public class DPOAEAnalysis {
 
+	static boolean headless = false;
+	
+	public static void setHeadless(boolean headless){
+		DPOAEAnalysis.headless = headless; 
+	}
+	
 	public static double[][] getSpectrum(short[] x, double Fs, int epochTime){
 		return SignalProcessing.getSpectrum(x, Fs,epochTime);
 	}
 
 	public static void plotSpectrum(String title, double[][] Pxx, double Fres, String outFileName){
-		SpectralPlot demo = new SpectralPlot(title,Pxx,Fres,outFileName);
+		SpectralPlotFrame demo = new SpectralPlotFrame(title,Pxx,Fres,outFileName);
+		try {
+			PlotUtils.renderToFile(demo, outFileName);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		demo.pack();
 		RefineryUtilities.centerFrameOnScreen(demo);
 		demo.setVisible(true);
+	}
+	
+	public static void plotSpectrumHeadless(String title, double[][] Pxx, double Fres, String outFileName){
+		SpectralPlot demo = SpectralPlot.fromData(title,Pxx,Fres);
+		try {
+			PlotUtils.renderToFile(demo.render(), outFileName);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public static double[] getResponse(double[][] XFFT, double desF, double tolerance){
@@ -134,8 +159,14 @@ public class DPOAEAnalysis {
 			//Check to see if any clipping occurred
 			if(SignalProcessing.isclipped(rawData,Fs)){
 				//Plot waveform
-				Plot mPlot= new Plot(outFileName,"time","y",rawData);
-				mPlot.showPlot();
+				if(!headless){
+					PlotFrame mPlot= new PlotFrame(outFileName,"time","y",rawData);
+					mPlot.showPlot();
+					PlotUtils.renderToFile(mPlot.render(), outFileName);
+				} else {
+					Plot mPlot= Plot.fromData(outFileName,"time","y",rawData);
+					PlotUtils.renderToFile(mPlot.render(), outFileName);
+				}
 				System.err.println("Error: clipping occured in:" + outFileName);
 				throw new DPOAEAnalysisException("Corrupted (Clipped) data: " + outFileName);
 			}
@@ -143,7 +174,11 @@ public class DPOAEAnalysis {
 			
 			double[][] XFFT= DPOAEAnalysis.getSpectrum(rawData,Fs,epochTime);
 			//Plot spectrum
-			plotSpectrum("DPOAE",XFFT,Fres,outFileName);
+			if(!headless){
+				plotSpectrum("DPOAE",XFFT,Fres,outFileName);
+			} else {
+				plotSpectrumHeadless("DPOAE",XFFT,Fres,outFileName);
+			}
 			tmpResult=getResponse(XFFT,F1,tolerance);
 			results[0]=tmpResult[1];
 
@@ -168,8 +203,16 @@ public class DPOAEAnalysis {
 			 
 		}	
 
-		String outFileName2=dataDir+File.separator+"DPAudiogram.png";		 		
-		PlotAudiogram audiogram=new PlotAudiogram("DPGram",DPOAEData,noiseFloor,f1Data,f2Data,outFileName2);
+		String outFileName2=dataDir+File.separator+"DPAudiogram.png";
+		if (!headless){
+			PlotAudiogramFrame audiogram=new PlotAudiogramFrame("DPGram",DPOAEData,noiseFloor,f1Data,f2Data,outFileName2);
+			PlotUtils.renderToFile(audiogram.render(), outFileName2);
+			audiogram.setVisible(true);
+		} else {	 		
+			PlotAudiogram audiogram=new PlotAudiogram("DPGram",DPOAEData,noiseFloor,f1Data,f2Data);
+			PlotUtils.renderToFile(audiogram.render(), outFileName2);
+		}
+		
 		System.out.println("2kHz:\t" + "DPOAE= " + DPOAEData[1] 
 				+ "\tDPOAE - Noise= " +((double)Math.round((DPOAEData[1]-noiseFloor[1])*10)/10));
 		System.out.println("3kHz:\t" + "DPOAE= " + DPOAEData[3]
@@ -180,8 +223,11 @@ public class DPOAEAnalysis {
 	}
 
 	public static void main(String[] args) throws Exception {
-		DPOAEAnalysis.runAnalysis(args);
-		System.exit(0);
+		boolean headless = GraphicsEnvironment.isHeadless();
+		System.out.println("Headless? " + headless);
+		setHeadless(headless);
+			DPOAEAnalysis.runAnalysis(args);
+		//System.exit(0);
 	}
 }
 
