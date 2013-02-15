@@ -6,6 +6,8 @@ package org.audiopulse.graphics;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
@@ -28,10 +30,12 @@ public final class PlotUtils {
 	 * @param height Image height
 	 * @throws IOException If an error occurs opening or writing to the file.
 	 */
-	public static void renderToFile(JFreeChart chart, String outfile, int width,
+	public static File renderToFile(JFreeChart chart, String outfile, int width,
 			int height) throws IOException 
 	{
-		ChartUtilities.saveChartAsPNG(new File(outfile),chart, width, height);
+		File out = new File(outfile);
+		ChartUtilities.saveChartAsPNG(out,chart, width, height);
+		return out;
 	}
 	
 	/**
@@ -40,8 +44,8 @@ public final class PlotUtils {
 	 * @param outfile
 	 * @throws IOException If an error occurs opening or writing to the file.
 	 */
-	public static void renderToFile(JFreeChart chart, String outfile) throws IOException {
-		renderToFile(chart, outfile, 400, 400);
+	public static File renderToFile(JFreeChart chart, String outfile) throws IOException {
+		return renderToFile(chart, outfile, 400, 400);
 	}
 	
 
@@ -54,10 +58,10 @@ public final class PlotUtils {
 	 * @param height Image height
 	 * @throws IOException If an error occurs opening or writing to the file.
 	 */
-	public static <T extends ChartRenderer>void renderToFile(T renderer, 
+	public static <T extends ChartRenderer> File renderToFile(T renderer, 
 			String outfile, int width, int height) throws IOException 
 	{
-		renderToFile(renderer.render(), outfile, width, height);
+		return renderToFile(renderer.render(), outfile, width, height);
 	}
 	
 	/**
@@ -67,10 +71,10 @@ public final class PlotUtils {
 	 * @param height Image height
 	 * @throws IOException If an error occurs opening or writing to the file.
 	 */
-	public static <T extends ChartRenderer>void renderToFile(T renderer, 
+	public static <T extends ChartRenderer> File renderToFile(T renderer, 
 			String outfile) throws IOException 
 	{
-		renderToFile(renderer.render(), outfile, 400, 400);
+		return renderToFile(renderer.render(), outfile, 400, 400);
 	}
 	
 	/**
