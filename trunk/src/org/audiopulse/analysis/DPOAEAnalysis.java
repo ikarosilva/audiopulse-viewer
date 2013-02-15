@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.audiopulse.graphics.Plot;
 import org.audiopulse.graphics.PlotAudiogram;
@@ -30,6 +32,12 @@ class DPOAEAnalysisException extends Exception {
 
 public class DPOAEAnalysis {
 
+	static final String CLIPPED_VIEW_CONCEPT = null;
+
+	static final String DPOAE_VIEW_CONCEPT = null;
+
+	static String DPAUDIOGRAM_VIEW_CONCEPT = null;
+
 	static boolean headless = false;
 	
 	public static void setHeadless(boolean headless){
@@ -52,13 +60,14 @@ public class DPOAEAnalysis {
 		demo.setVisible(true);
 	}
 	
-	public static void plotSpectrumHeadless(String title, double[][] Pxx, double Fres, String outFileName){
+	public static File plotSpectrumHeadless(String title, double[][] Pxx, double Fres, String outFileName){
 		SpectralPlot demo = SpectralPlot.fromData(title,Pxx,Fres);
 		try {
-			PlotUtils.renderToFile(demo.render(), outFileName);
+			return PlotUtils.renderToFile(demo.render(), outFileName);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return null;
 		}
 	}
 
@@ -222,6 +231,105 @@ public class DPOAEAnalysis {
 		System.out.println("Analysis complete! ");
 	}
 
+	public static Map<String, File> renderConceptMap(String[] args) throws Exception {
+		Map<String, File> map = new HashMap<String,File>();
+		System.out.println("Analyzing results of compressed file...");
+		//Get directory listing 
+		String dataDir=PackageDataThreadRunnable.unpackData(args[0]);
+		
+		//Set parameters according to the procedures defined by
+		//Gorga et al 1993,"Otoacoustic Emissions from Normal-hearing and hearing-impaired subject: distortion product responses
+		double Fs=16000, F2=0, F1=0,Fres=0;	 //Frequency of the expected response
+		int epochTime=512; //Size of each epoch from which to do the averaging, this is a trade off between
+		//being close the Gorga's value (20.48 ms) and being a power of 2 for FFT analysis and given our Fs. 
+		File[] oaeFiles=finder(dataDir);
+		Arrays.sort(oaeFiles);
+		double[] results = new double[3]; 
+		double tolerance=50; //Tolerance, in Hz, from which to get the closest FFT bin relative to the actual desired frequency
+		int M=3, fIndex=0; //number of frequencies being tested
+		//The data is sent for plotting in an interleaved fashion
+		//where odd elements are x-axis and even elements are y-axis
+		double[] DPOAEData=new double[2*M];
+		double[] noiseFloor=new double[2*M];
+		double[] f1Data=new double[2*M];
+		double[] f2Data=new double[2*M];
+		double[] tmpResult=new double[2];
+		int FresIndex;
+		short[] rawData=null;
+		
+		for(int i=0;i<oaeFiles.length;i++){
+			String outFileName=oaeFiles[i].getAbsolutePath().replace(".raw","")+".png";		
+			//TODO: Right now the analysis is based on the Handbook of Otoacoustic Emissions Book by Hall
+			//These parameters (F1,F2,Fres) should be loaded dynamically based on the protocol description
+			//on the acompanying XML File
+			if(outFileName.contains("AP_DPOAE-2kHz")){
+				F2=2000;F1=F2/1.2;Fres=(2*F1)-F2;	
+				fIndex=0*2;//index are all even, data amp goes in the odd indeces
+			}else if(outFileName.contains("AP_DPOAE-3kHz")){
+				F2=3000;F1=F2/1.2;Fres=(2*F1)-F2;
+				fIndex=1*2;
+			}else if(outFileName.contains("AP_DPOAE-4kHz")){
+				F2=4000;F1=F2/1.2;Fres=(2*F1)-F2;
+				fIndex=2*2;
+			}else{
+				System.err.println("Unexpected DPOAE File Name!");
+			}
+			rawData = ShortFile.readFile(oaeFiles[i].getAbsolutePath());
+
+			//Check to see if any clipping occurred
+			if(SignalProcessing.isclipped(rawData,Fs)){
+				Plot mPlot= Plot.fromData(outFileName,"time","y",rawData);
+				map.put(CLIPPED_VIEW_CONCEPT, PlotUtils.renderToFile(mPlot.render(),  outFileName));
+				System.err.println("Error: clipping occured in:" + outFileName);
+				throw new DPOAEAnalysisException("Corrupted (Clipped) data: " + outFileName);
+			}
+
+			
+			double[][] XFFT= DPOAEAnalysis.getSpectrum(rawData,Fs,epochTime);
+			
+			//Plot spectrum
+			map.put(DPOAE_VIEW_CONCEPT, plotSpectrumHeadless("DPOAE",XFFT,Fres,outFileName));
+			
+			tmpResult=getResponse(XFFT,F1,tolerance);
+			results[0]=tmpResult[1];
+
+			tmpResult=getResponse(XFFT,F2,tolerance);
+			results[1]=tmpResult[1];
+
+			tmpResult=getResponse(XFFT,Fres,tolerance);
+			results[2]=tmpResult[1];
+			FresIndex =(int) tmpResult[0]; //the closest FFT bin to the desired frequency that we want
+
+			f1Data[fIndex]=F2;
+			f1Data[fIndex+1]=Math.round(results[0]);
+
+			f2Data[fIndex]=F2;
+			f2Data[fIndex+1]=Math.round(results[1]);
+
+			DPOAEData[fIndex]=F2;
+			DPOAEData[fIndex+1]=Math.round(results[2]);
+
+			noiseFloor[fIndex]=F2;
+			noiseFloor[fIndex+1]=getNoiseLevel(XFFT,FresIndex);
+			 
+		}	
+
+		String outFileName2=dataDir+File.separator+"DPAudiogram.png";
+		// TODO define this
+		PlotAudiogram audiogram=new PlotAudiogram("DPGram",DPOAEData,noiseFloor,f1Data,f2Data);
+		map.put(DPAUDIOGRAM_VIEW_CONCEPT, PlotUtils.renderToFile(audiogram.render(), outFileName2));
+		
+		System.out.println("2kHz:\t" + "DPOAE= " + DPOAEData[1] 
+				+ "\tDPOAE - Noise= " +((double)Math.round((DPOAEData[1]-noiseFloor[1])*10)/10));
+		System.out.println("3kHz:\t" + "DPOAE= " + DPOAEData[3]
+				+ "\tDPOAE - Noise= " +((double)Math.round((DPOAEData[3]-noiseFloor[3])*10)/10));
+		System.out.println("4kHz:\t" + "DPOAE= " + DPOAEData[5]
+				+ "\tDPOAE - Noise= " +((double)Math.round((DPOAEData[5]-noiseFloor[5])*10)/10 ));
+		System.out.println("Analysis complete! ");
+		return map;
+	}
+	
+	
 	public static void main(String[] args) throws Exception {
 		boolean headless = GraphicsEnvironment.isHeadless();
 		System.out.println("Headless? " + headless);
