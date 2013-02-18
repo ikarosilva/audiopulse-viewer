@@ -21,6 +21,7 @@ class ProbeCalibrationException extends Exception {
 public class ProbeCalibration 
 {
 
+	// TODO: CHNAGE THE double linear scale of the frequncy to be either purely linear or ?? 
 	// Applying a broad-band, chirp signal in each of the two ER-2 earphones sequentially. 
 	// The chirp is equi-ampliude sine waves having a specified phase distribution. 
 	// Choose f2-f1 between fs/2 and fs/4.
