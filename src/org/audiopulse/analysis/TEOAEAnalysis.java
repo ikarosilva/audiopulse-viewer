@@ -5,6 +5,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import 
 
 import org.audiopulse.graphics.Plot;
 import org.audiopulse.graphics.PlotAudiogram;
@@ -91,6 +92,26 @@ public class TEOAEAnalysis {
 		System.out.println("Analyzing results of compressed file...");
 		//Get directory listing 
 		String dataDir=PackageDataThreadRunnable.unpackData(args[0]);
+		
+		//TODO: Use cross correlation to line up the stimulus and the response
+		// Note, the pulse train is 4sec high and 50 msec low, so 
+		// create function array[indecies of onset starts] = ...
+		//     findOnset(stimulus, recording) and generates a moving average of [1/4 1/4 1/4 1/4]
+		//     Cross-correlation = Real{IFFT(FFT(X).*FFT(S))}
+		// double[] averageEpoch = createResidues(recording, indices, umber of pulses per epoch)
+		//    first by creating the residual for each epoch by -> adding the first three, and subtracting the last one} this is now a resideual with no onset and just the linear response, average out THESE residuls
+		// 
+		// THis calls the function below:
+		// double[] getAverage(double[][] epochs)
+		//    THen average out all the response epochs (maybe there are 20) into a single response
+		//     this may eventually turn into haivng a weighted average where the weight is based on the variance in blocks of 10 across the residues
+		// There will be a adelay from the rectangluar pulse to where we actually expect to start
+		// After seeing a real freuency response, about 10msec perhaps? Then do analysis on the window 20 msecn 
+		// after the delay and the output spectrum. 
+		// CHeck the peaks at 2, 3, 4kHz... 
+		// UNsure about 4, think that might be the middle ear canal.
+		
+		
 		
 		//Set parameters according to the procedures defined by
 		//Gorga et al 1993,"Otoacoustic Emissions from Normal-hearing and hearing-impaired subject: distortion product responses
