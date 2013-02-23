@@ -55,12 +55,12 @@ public class ShortFile {
 		out.close();
 	}
 
-	public static short[] readFile(String file) throws IOException, ClassNotFoundException{
+	public static Short[] readFile(String file) throws IOException, ClassNotFoundException{
 		//Read Short file from disk	
 		FileInputStream nFile = new FileInputStream(file);
 		ObjectInputStream in = new ObjectInputStream(nFile);
-		short[] data=null;
-		data = (short[]) in.readObject();
+		Short[] data=null;
+		data = (Short[]) in.readObject();
 		in.close();
 		return data;
 	}
