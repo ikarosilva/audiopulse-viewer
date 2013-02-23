@@ -5,9 +5,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import 
-
-import org.audiopulse.graphics.Plot;
+import org.audiopulse.graphics.*;
+import org.audiopulse.ui.*;
 import org.audiopulse.graphics.PlotAudiogram;
 import org.audiopulse.graphics.SpectralPlot;
 import org.audiopulse.io.PackageDataThreadRunnable;
@@ -26,18 +25,36 @@ class TEOAEAnalysisException extends Exception {
 
 
 public class TEOAEAnalysis {
+	
+	public static void main(String[] args) throws Exception {
+		short[] rawData;
+		Short[] tmpData=null;
+		System.out.println("Reading file: " + args[0]);
+		tmpData = ShortFile.readFile(args[0]);
+		rawData=new short[tmpData.length];
+		for(int i=0;i<tmpData.length;i++)
+			rawData[i]=tmpData[i];
+		System.out.println("Data size: " + rawData.length);
+		PlotFrame plot= new PlotFrame("tmp.png","time","TEOAE",rawData);
+		plot.showPlot();
+		
+	}
+	
+	/*
 
 	public static double[][] getSpectrum(short[] x, double Fs, int epochTime){
 		return SignalProcessing.getSpectrum(x, Fs,epochTime);
 	}
-
+	 */
+	/*
 	public static void plotSpectrum(String title, double[][] Pxx, double Fres, String outFileName){
 		SpectralPlot demo = new SpectralPlot(title,Pxx,Fres,outFileName);
 		demo.pack();
 		RefineryUtilities.centerFrameOnScreen(demo);
 		demo.setVisible(true);
 	}
-
+*/
+	/*
 	public static double[] getResponse(double[][] XFFT, double desF, double tolerance){
 
 		//Search through the spectrum to get the closest bin 
@@ -204,6 +221,7 @@ public class TEOAEAnalysis {
 		TEOAEAnalysis.runAnalysis(args);
 		System.exit(0);
 	}
+	*/
 }
 
 
