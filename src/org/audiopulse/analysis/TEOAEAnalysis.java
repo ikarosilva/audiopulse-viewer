@@ -25,21 +25,27 @@ class TEOAEAnalysisException extends Exception {
 
 
 public class TEOAEAnalysis {
-	
+
 	public static void main(String[] args) throws Exception {
-		short[] rawData;
 		Short[] tmpData=null;
-		System.out.println("Reading file: " + args[0]);
 		tmpData = ShortFile.readFile(args[0]);
-		rawData=new short[tmpData.length];
-		for(int i=0;i<tmpData.length;i++)
-			rawData[i]=tmpData[i];
-		System.out.println("Data size: " + rawData.length);
-		PlotFrame plot= new PlotFrame("tmp.png","time","TEOAE",rawData);
-		plot.showPlot();
-		
+		if(tmpData != null){
+			System.out.println("Reading file: " + args[0]);
+			short [] rawData=new short[tmpData.length];
+			System.out.println("Data size: " + tmpData.length);
+			System.out.println("Data size: " + rawData.length);
+			for(int i=0;i<tmpData.length;i++){
+				System.out.println(i + " = " +tmpData[i]);
+				rawData[i]=tmpData[i];
+			}
+			PlotFrame plot= new PlotFrame("tmp.png","time","TEOAE",rawData);
+			plot.showPlot();
+		}else{
+			System.out.println("File not found: " + args[0] );
+		}
+
 	}
-	
+
 	/*
 
 	public static double[][] getSpectrum(short[] x, double Fs, int epochTime){
@@ -53,7 +59,7 @@ public class TEOAEAnalysis {
 		RefineryUtilities.centerFrameOnScreen(demo);
 		demo.setVisible(true);
 	}
-*/
+	 */
 	/*
 	public static double[] getResponse(double[][] XFFT, double desF, double tolerance){
 
@@ -103,13 +109,13 @@ public class TEOAEAnalysis {
 			{ return filename.endsWith(".raw"); }
 		} );
 	}
-	
+
 	public static void runAnalysis(String[] args) throws Exception {
 
 		System.out.println("Analyzing results of compressed file...");
 		//Get directory listing 
 		String dataDir=PackageDataThreadRunnable.unpackData(args[0]);
-		
+
 		//TODO: Use cross correlation to line up the stimulus and the response
 		// Note, the pulse train is 4sec high and 50 msec low, so 
 		// create function array[indecies of onset starts] = ...
@@ -127,9 +133,9 @@ public class TEOAEAnalysis {
 		// after the delay and the output spectrum. 
 		// CHeck the peaks at 2, 3, 4kHz... 
 		// UNsure about 4, think that might be the middle ear canal.
-		
-		
-		
+
+
+
 		//Set parameters according to the procedures defined by
 		//Gorga et al 1993,"Otoacoustic Emissions from Normal-hearing and hearing-impaired subject: distortion product responses
 		double Fs=16000, F2=0, F1=0,Fres=0;	 //Frequency of the expected response
@@ -149,7 +155,7 @@ public class TEOAEAnalysis {
 		double[] tmpResult=new double[2];
 		int FresIndex;
 		short[] rawData=null;
-		
+
 		for(int i=0;i<oaeFiles.length;i++){
 			String outFileName=oaeFiles[i].getAbsolutePath().replace(".raw","")+".png";		
 			//TODO: Right now the analysis is based on the Handbook of Otoacoustic Emissions Book by Hall
@@ -178,7 +184,7 @@ public class TEOAEAnalysis {
 				throw new TEOAEAnalysisException("Corrupted (Clipped) data: " + outFileName);
 			}
 
-			
+
 			double[][] XFFT= TEOAEAnalysis.getSpectrum(rawData,Fs,epochTime);
 			//Plot spectrum
 			plotSpectrum("TEOAE",XFFT,Fres,outFileName);
@@ -203,7 +209,7 @@ public class TEOAEAnalysis {
 
 			noiseFloor[fIndex]=F2;
 			noiseFloor[fIndex+1]=getNoiseLevel(XFFT,FresIndex);
-			 
+
 		}	
 
 		String outFileName2=dataDir+File.separator+"DPAudiogram.png";		 		
@@ -221,7 +227,7 @@ public class TEOAEAnalysis {
 		TEOAEAnalysis.runAnalysis(args);
 		System.exit(0);
 	}
-	*/
+	 */
 }
 
 
