@@ -1,12 +1,13 @@
 // Here we will have the three subfunctions which deal with ear fitting, 
 //and more might come later...
 
-package org.audiopulse.analysis;
+package org.audiopulse.utilities;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
+import org.jfree.data.xy.XYSeries;
 
 class ProbeCalibrationException extends Exception {
 	private static final long serialVersionUID = 1L;
@@ -25,7 +26,7 @@ public class ProbeCalibration
 	// Applying a broad-band, chirp signal in each of the two ER-2 earphones sequentially. 
 	// The chirp is equi-ampliude sine waves having a specified phase distribution. 
 	// Choose f2-f1 between fs/2 and fs/4.
-	@depecated public static XYSeries generateChirp(double Fs, double f1, double f2, double tf)
+	@Deprecated public static XYSeries generateChirp(double Fs, double f1, double f2, double tf)
 	{		
 		//double Fs, f1, f2, tf;   // sample rate and the frequency band
 		double sl;			 // the duration of the chirp
@@ -40,13 +41,17 @@ public class ProbeCalibration
 		//f2 = 800; 
 		//tf = 1; // In seconds
 		
-		// Set time arrays		
+		// Set time arrays	
+		/*
 		t = new double[size];
 		f = new double[size];
 		f_first = new double[size/2];
 		f_second = new double[size/2];
 		half_t = new double[size/2];
+		*/
+		return null;
 		
+		/*
 		// Set the time ranges for the entire signal, and the half signal
 		t = [0:1/Fs:(tf-1/Fs)];
 		half_t = [0:1/Fs:(tf/2-1/Fs)];
@@ -58,15 +63,16 @@ public class ProbeCalibration
 		f1_1 = f1*semi_t+(sl*semi_t);
 		f2_1 = f1_1(end)+f2*semi_t-(sl*semi_t); 
 		f = [f1_1 f2_1];
-	
+	*/
 		// Now create the sound to be played
-		y = new XYSeries(1.33*cos(2*pi*f.*t));		
+		//y = new XYSeries(1.33*cos(2*pi*f.*t));		
 	}
 	
 	// Check the fit according to the REFERENCE: Distortion-product and click-evoked otoacoustic emissions of normally-hearing adults
 	// J Smurzynski, DO Kim - Hearing research, 1992	
-	@deprecated public static boolean isFit()
+	@Deprecated public static boolean isFit()
 	{
+		return false;
 		// Play sound
 		
 		// Record response
@@ -74,7 +80,7 @@ public class ProbeCalibration
 		// Do the FFT
 		
 		//Check the response
-		
+		/*
 		// If the fit is good, the frequency characteristics of the ER-2 earphones are
 		//  nearly flat for the low frequency region (below 2 kHz).
 		if(dminF > tolerance)
@@ -83,6 +89,7 @@ public class ProbeCalibration
 			System.err.println("Results are innacurate because frequency tolerance has been exceeded. Desired F= "
 					+ desF +" closest F= " + actF);
 		}
+		*/
 			
 		// The sound pressure level was decreased below 1 kHz when a probe was loosely fit.
 	}	
