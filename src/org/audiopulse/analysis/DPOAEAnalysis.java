@@ -145,7 +145,6 @@ public class DPOAEAnalysis {
 		double[] tmpResult=new double[2];
 		int FresIndex;
 		short[] rawData=null;
-		Short[] tmpData=null;
 		
 		for(int i=0;i<oaeFiles.length;i++){
 			String outFileName=oaeFiles[i].getAbsolutePath().replace(".raw","")+".png";		
@@ -164,9 +163,7 @@ public class DPOAEAnalysis {
 			}else{
 				System.err.println("Unexpected DPOAE File Name!");
 			}
-			tmpData = ShortFile.readFile(oaeFiles[i].getAbsolutePath());
-			for(int k=0;k<tmpData.length;k++)
-				tmpData[k]=rawData[k];
+			rawData = ShortFile.readFile(oaeFiles[i].getAbsolutePath());;
 
 			//Check to see if any clipping occurred
 			if(SignalProcessing.isclipped(rawData,Fs)){
@@ -278,9 +275,7 @@ public class DPOAEAnalysis {
 			}else{
 				System.err.println("Unexpected DPOAE File Name!");
 			}
-			tmpData = ShortFile.readFile(oaeFiles[i].getAbsolutePath());
-			for(int k=0;k<tmpData.length;k++)
-				tmpData[k]=rawData[k];
+			rawData = ShortFile.readFile(oaeFiles[i].getAbsolutePath());
 
 			//Check to see if any clipping occurred
 			if(SignalProcessing.isclipped(rawData,Fs)){

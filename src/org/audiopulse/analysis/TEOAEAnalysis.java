@@ -27,18 +27,12 @@ class TEOAEAnalysisException extends Exception {
 public class TEOAEAnalysis {
 
 	public static void main(String[] args) throws Exception {
-		Short[] tmpData=null;
+		short[] tmpData=null;
 		tmpData = ShortFile.readFile(args[0]);
 		if(tmpData != null){
 			System.out.println("Reading file: " + args[0]);
-			short [] rawData=new short[tmpData.length];
 			System.out.println("Data size: " + tmpData.length);
-			System.out.println("Data size: " + rawData.length);
-			for(int i=0;i<tmpData.length;i++){
-				System.out.println(i + " = " +tmpData[i]);
-				rawData[i]=tmpData[i];
-			}
-			PlotFrame plot= new PlotFrame("tmp.png","time","TEOAE",rawData);
+			PlotFrame plot= new PlotFrame("tmp.png","time","TEOAE",tmpData);
 			plot.showPlot();
 		}else{
 			System.out.println("File not found: " + args[0] );
