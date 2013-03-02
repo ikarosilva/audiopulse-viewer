@@ -28,7 +28,8 @@ public class TEOAEAnalysis {
 
 	public static void main(String[] args) throws Exception {
 		short[] tmpData=null;
-		tmpData = ShortFile.readFile(args[0]);
+		String filename="/home/ikaro/TEOAE_Samples/AP_TEOAE-kHz-Sat-Mar-02-14-09-15-EST-2013.raw";
+		tmpData = ShortFile.readFile(filename);
 		if(tmpData != null){
 			System.out.println("Reading file: " + args[0]);
 			System.out.println("Data size: " + tmpData.length);
