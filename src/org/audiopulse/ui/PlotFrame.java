@@ -33,6 +33,15 @@ public class PlotFrame  extends ApplicationFrame  implements ChartRenderer{
 		setContentPane(chartPanel);
 	}
 	
+	public PlotFrame(String title, String timeLabel,
+			String amplitudeLabel, double[] rawData) {
+		super(title);
+		plot = Plot.fromData(amplitudeLabel, amplitudeLabel, amplitudeLabel, rawData);
+		JPanel chartPanel = new ChartPanel(render());
+		chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+		setContentPane(chartPanel);
+	}
+	
 	public void showPlot(){
 		this.pack();
 		RefineryUtilities.centerFrameOnScreen(this);
