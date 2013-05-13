@@ -137,6 +137,19 @@ public final class PlotUtils {
 		return result;
 	}
 	
+	public static XYDataset createDataset(double[] data) {
+		//XYDataset result = DatasetUtilities.sampleFunction2D(new X2(),
+		//        -4.0, 4.0, 40, "f(x)");
+		XYSeriesCollection result = new XYSeriesCollection();
+		XYSeries series = new XYSeries(1);
+		//Insert data into plotting series 
+		for(int n=0;n<data.length;n++){
+			series.add(n,data[n]);
+		}
+		result.addSeries(series);
+		return result;
+	}
+	
 	/**
 	 * Takes an array of short values and returns them as an XYDataset
 	 * 

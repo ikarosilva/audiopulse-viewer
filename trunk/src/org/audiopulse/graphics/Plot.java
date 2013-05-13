@@ -132,6 +132,12 @@ public class Plot {
 		XYDataset dataset = PlotUtils.createDataset(data);
 		return new Plot(amplitudeLabel, amplitudeLabel, amplitudeLabel, dataset);
 	}
+	
+	public static Plot fromData(String title, String timeLabel,
+			String amplitudeLabel, double[] data) {
+		XYDataset dataset = PlotUtils.createDataset(data);
+		return new Plot(amplitudeLabel, amplitudeLabel, amplitudeLabel, dataset);
+	}
 
 	/**
 	 * Returns a new Plot object with and converts any raw data into an XYDataset.
