@@ -69,8 +69,6 @@ public class TEOAEAnalysis {
 		// If there is data, plot it, and determine response 
 		if(tmpData != null)
 		{
-			//double[] response=getAverage(tmpData,300);
-			//double peakAmp=0;
 		
 			System.out.println("Reading file: " + args[0]);
 			System.out.println("Data size: " + tmpData.length);
@@ -83,8 +81,8 @@ public class TEOAEAnalysis {
 			// Find the record mid-point
 			midPoint = Math.round(tmpData.length/2);
 			leftPoint = midPoint - (p_pSize*5);
-			rightPoint = midPoint + (p_pSize*5);
-						
+			rightPoint = midPoint + (p_pSize*5);									
+			
 			// Get an idea of the signal max to determine the threshold			
 			// Reverse the signal and take the absolute value  or convert to dB
 			Collections.reverse(Arrays.asList(origData));
@@ -98,6 +96,9 @@ public class TEOAEAnalysis {
 
 			// The threshold is the 75th percentile of the mid range data
 			peakThreshold = StatUtils.percentile(midData, 75);
+			
+			//double[] response=getAverage(tmpData,300);
+			//double peakAmp=0;
 			
 			// Keep a running average per epoch (per four peaks) of the signal
 			epochAverage = new double[epochSize];
@@ -216,7 +217,7 @@ public class TEOAEAnalysis {
 		return average;
 	}
 
-	public static void findOnset(short[] data, int StimulusDurationSamples){
+	public static ArrayList<Integer> findOnset(short[] data, int StimulusDurationSamples){
 
 		ArrayList<Integer> onsetIndices= new ArrayList<Integer>();
 		int openEyes=0;
@@ -234,7 +235,7 @@ public class TEOAEAnalysis {
 			openEyes--;
 		}
 
-
+		return onsetIndices;
 	}
 
 
