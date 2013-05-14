@@ -5,10 +5,14 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Collections;
 
+import org.apache.commons.math3.stat.*;
 import org.audiopulse.graphics.*;
 import org.audiopulse.ui.*;
+import org.audiopulse.utilities.*;
 import org.audiopulse.graphics.PlotAudiogram;
 import org.audiopulse.graphics.SpectralPlot;
 import org.audiopulse.io.PackageDataThreadRunnable;
@@ -29,93 +33,114 @@ class TEOAEAnalysisException extends Exception {
 public class TEOAEAnalysis {
 
 	public static void main(String[] args) throws Exception {
-		short[] tmpData=null;
-		String filename="/home/ikaro/TEOAE_Samples/AP_TEOAE-kHz-Sat-Mar-02-14-09-15-EST-2013.raw";
+		double TH = -1; // threshold for search in dB
+		short[] tmpData = null;
+		double[] origData = null, midData = null, dBData = null, absData = null, epochAverage = null;
+		int midPoint = 0, leftPoint, rightPoint;
+		double Fs = 16000, F2=0, F1=0, Fres=0;	 					// Frequency of the expected response
+		
+		// Time units for search windows
+		double p_pTime = 0.020, epochTime = p_pTime*4;  			 
+		
+		// Convert time to size
+		int p_pSize = (int) Math.round(p_pTime*Fs);
+		int epochSize = (int) Math.round(epochTime*Fs);
+		int winSlide = Math.round(epochSize/2); 	
+		double peakThreshold = 0;
+		
+		// Counting/storage/search structures
+		List<Integer> peakInd = new ArrayList<Integer>();	
+		List<Double> winMean = new ArrayList<Double>();
+		double[] runningSum = null; 	
+		
+		//String filename="/home/mghassem/workspace1/AudioPulseViewer/TEOAE_Samples/AP_TEOAE-kHz-Sat-Mar-02-13-58-20-EST-2013.raw";
+		//String filename="/home/mghassem/workspace1/AudioPulseViewer/TEOAE_Samples/AP_TEOAE-kHz-Sat-Mar-02-13-58-26-EST-2013.raw";
+		//String filename="/home/mghassem/workspace1/AudioPulseViewer/TEOAE_Samples/AP_TEOAE-kHz-Sat-Mar-02-13-58-32-EST-2013.raw";
+		//String filename="/home/mghassem/workspace1/AudioPulseViewer/TEOAE_Samples/AP_TEOAE-kHz-Sat-Mar-02-13-58-37-EST-2013.raw";
+		//String filename="/home/mghassem/workspace1/AudioPulseViewer/TEOAE_Samples/AP_TEOAE-kHz-Sat-Mar-02-13-58-42-EST-2013.raw";		
+		String filename="/home/mghassem/workspace1/AudioPulseViewer/TEOAE_Samples/AP_TEOAE-kHz-Sat-Mar-02-14-09-15-EST-2013.raw";
+		
+		// Read the data in 
 		tmpData = ShortFile.readFile(filename);
-		double[] response=getAverage(tmpData,300);
-		double peakAmp=0;
-		if(response != null){
+		//tmpData = ShortFile.readFile(args[0]);		
+		
+		// If there is data, plot it, and determine response 
+		if(tmpData != null)
+		{
 			System.out.println("Reading file: " + args[0]);
-			System.out.println("Data size: " + response.length);
-			PlotFrame plot= new PlotFrame("tmp.png","time","TEOAE",response);
+			System.out.println("Data size: " + tmpData.length);
+			PlotFrame plot = new PlotFrame("tmp.png","time","TEOAE",tmpData);
 			plot.showPlot();
-		}else{
+			
+			// Convert the raw data from short to double
+			origData = SignalProcessing.shortToDouble(tmpData);
+						
+			// Find the record mid-point
+			midPoint = Math.round(tmpData.length/2);
+			leftPoint = midPoint - (p_pSize*5);
+			rightPoint = midPoint + (p_pSize*5);
+						
+			// Get an idea of the signal max to determine the threshold			
+			// Reverse the signal and take the absolute value  or convert to dB
+			Collections.reverse(Arrays.asList(origData));
+			Collections.reverse(Arrays.asList(origData));
+			for (int j = 0; j < tmpData.length; j++) 
+			{	
+				dBData[j] = tmpData[j] * Math.pow(10, (-TH/20));
+				absData[j] = Math.abs(tmpData[j]);
+			}
+			midData = Arrays.copyOfRange(absData, leftPoint, rightPoint);						
+
+			// The threshold is the 75th percentile of the mid range data
+			peakThreshold = StatUtils.percentile(midData, 75);
+			
+			// Keep a running average per epoch (per four peaks) of the signal
+			epochAverage = Arrays.epochSize;
+			
+			//Search in 20 msec windows for the peak, moving each time by 10 millisec plus peak
+			for (int j = 0; j < (tmpData.length - p_pSize); j = j + winSlide)
+			{
+				midData = Arrays.copyOfRange(origData, j, j + p_pSize);
+				List<Integer> peakCand = new ArrayList<Integer>();
+				List<Double> peakVal = new ArrayList<Double>();
+				int maxPeakLoc = 0;
+				
+				// Find all potential peaks in this window
+				for (int k = 0; k < midData.length; k++)
+				{
+					if (midData[k] > peakThreshold)
+					{
+						peakCand.add(j + k);
+						peakVal.add(midData[k]);						
+					}
+					if (midData[k] > Collections.max(peakVal))
+					{
+						maxPeakLoc = j + k;
+					}
+				}	
+				
+				// No peaks were found
+				if(peakCand.size() == 0) {}
+
+				// Else take the max peak index as the new peak
+				else 
+				{ peakInd.add(maxPeakLoc); }			
+			}
+			
+			// Plot the waveform with peaks
+			PlotFrame mPlot= new PlotFrame(outFileName,"time","y",rawData);
+			mPlot.showPlot();
+			
+			// Take the averaged sum epoch
+			
+			//Do FFT of the sum
+			getFreqAmplitude(double[][] XFFT, double desF, double tolerance)
+		}
+		else
+		{
 			System.out.println("File not found: " + args[0] );
 		}
 
-	}
-
-	public static double[] getAverage(short[] data, int StimulusDurationSamples){
-
-		double[] average=new double[StimulusDurationSamples];
-		int grandInt=0;
-		int openEyes=0;
-		//Estimate peak amplitude
-		double peakAmp=getPeakStats(data);
-		int peakSign=0, peakRecord=0;
-		for(int i=0; i<data.length;i++){
-			if(openEyes > StimulusDurationSamples){
-				if( Math.abs(data[i]) >= peakAmp){
-					//If peak detected, reset open-eyes to start averaging
-					openEyes=0;
-					System.out.println("onset detected: " + i);
-					peakSign=(data[i]>0) ? 1:-1;
-					peakRecord+=peakSign;
-				}
-			}else{
-				if(peakSign<0){
-					//Dealing with small amp stimulus, add them up 
-					average[openEyes]+=data[i];
-				}else{
-					//Dealing with 3x amp stimulus. Subtract to get the non-linear reponse
-					average[openEyes]-=data[i];
-					//Check if the record was correct and reset the record
-					if(peakRecord != 3)
-						System.err.println("Unexpected number of peaks in averaging: " + peakRecord);
-					peakRecord=0;
-					grandInt++;
-				}
-				if(peakRecord > 3 || peakRecord<0)
-					System.err.println("Unexpected number of peaks in averaging: " + peakRecord);
-			}
-			openEyes++;
-		}
-		
-		return average;
-	}
-
-	public static void findOnset(short[] data, int StimulusDurationSamples){
-
-		ArrayList<Integer> onsetIndices= new ArrayList<Integer>();
-		int openEyes=0;
-
-		//Estimate peak amplitude
-		double peakAmp=getPeakStats(data);
-		for(int i=0; i<data.length;i++){
-			if(openEyes < 0){
-				if( Math.abs(data[i]) >= peakAmp){
-					onsetIndices.add(i);
-					openEyes=StimulusDurationSamples+1;
-					System.out.println("onset detected: " + i);
-				}
-			}
-			openEyes--;
-		}
-
-
-	}
-
-
-	public static double getPeakStats(short[] tmpData){
-		//Find the location of the peaks sing simple stats from the middle  of the waveform
-		double peakAmp=0;
-		int weight=1;
-		for(int i=(2*tmpData.length/4);i<(3*tmpData.length/4);i++){
-			//peakAmp=((weight-1)*peakAmp + Math.log(Math.abs(tmpData[i])))/weight;
-			peakAmp=(peakAmp < Math.abs(tmpData[i])) ? Math.abs(tmpData[i]): peakAmp;
-		}
-		return peakAmp*0.8;
-		//return Math.pow(10,peakAmp);
 	}
 
 	/*
