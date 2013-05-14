@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Collections;
 
 import org.apache.commons.math3.stat.*;
+
 import org.audiopulse.graphics.*;
 import org.audiopulse.ui.*;
 import org.audiopulse.utilities.*;
@@ -29,15 +30,16 @@ class TEOAEAnalysisException extends Exception {
 	}
 }
 
-
 public class TEOAEAnalysis {
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws Exception 
+	{
 		double TH = -1; // threshold for search in dB
 		short[] tmpData = null;
 		double[] origData = null, midData = null, dBData = null, absData = null, epochAverage = null;
-		int midPoint = 0, leftPoint, rightPoint;
+		int midPoint = 0, leftPoint, rightPoint, peaksFound;
 		double Fs = 16000, F2=0, F1=0, Fres=0;	 					// Frequency of the expected response
+		boolean firstFlag = true;
 		
 		// Time units for search windows
 		double p_pTime = 0.020, epochTime = p_pTime*4;  			 
@@ -67,6 +69,9 @@ public class TEOAEAnalysis {
 		// If there is data, plot it, and determine response 
 		if(tmpData != null)
 		{
+			//double[] response=getAverage(tmpData,300);
+			//double peakAmp=0;
+		
 			System.out.println("Reading file: " + args[0]);
 			System.out.println("Data size: " + tmpData.length);
 			PlotFrame plot = new PlotFrame("tmp.png","time","TEOAE",tmpData);
@@ -95,7 +100,9 @@ public class TEOAEAnalysis {
 			peakThreshold = StatUtils.percentile(midData, 75);
 			
 			// Keep a running average per epoch (per four peaks) of the signal
-			epochAverage = Arrays.epochSize;
+			epochAverage = new double[epochSize];
+			Arrays.fill(epochAverage, 0);
+			peaksFound = 0;		
 			
 			//Search in 20 msec windows for the peak, moving each time by 10 millisec plus peak
 			for (int j = 0; j < (tmpData.length - p_pSize); j = j + winSlide)
@@ -117,30 +124,130 @@ public class TEOAEAnalysis {
 					{
 						maxPeakLoc = j + k;
 					}
-				}	
+				}					
 				
 				// No peaks were found
-				if(peakCand.size() == 0) {}
+				if(peakCand.size() == 0) {continue;}
 
 				// Else take the max peak index as the new peak
-				else 
-				{ peakInd.add(maxPeakLoc); }			
+				peakInd.add(maxPeakLoc);				
+				
+				// Move j to peak location + 1, so the next search will be from peak + 20 msec
+				j = maxPeakLoc + 1;
+				
+				// Add this epoch to the running mean by taking an epochSize window behind it
+				for (int k = 0; k < epochSize; k++)	
+				{ 
+					epochAverage[k] = (epochAverage[k] + peaksFound*origData[j-epochSize+k])/(peaksFound+1);					
+				}				
+				peaksFound = peaksFound+1;
 			}
 			
 			// Plot the waveform with peaks
-			PlotFrame mPlot= new PlotFrame(outFileName,"time","y",rawData);
-			mPlot.showPlot();
+			PlotFrame mPlot = new PlotFrame("peakData.png","time","y",tmpData);
+			for (int j = 0; j < peakInd.size(); j++)
+			{ 
+				//mPlot.add(peakInd, "r*");				
+			}
+			mPlot.showPlot();	
 			
-			// Take the averaged sum epoch
+			// Plot the averaged waveform
+			PlotFrame ePlot= new PlotFrame("epochData.png","time","y",epochAverage);
+			ePlot.showPlot();
 			
-			//Do FFT of the sum
-			getFreqAmplitude(double[][] XFFT, double desF, double tolerance)
+			// Do the FFT of the averaged epoch
+			//double[][] XFFT= TEOAEAnalysis.getSpectrum(rawData,Fs,epochTime);
+			
+			// Check if expected number of epochs = number of epochs
+			if(peaksFound != Math.round(tmpData.length/epochSize))
+			{
+				System.out.println("Expected number of epochs based on data size: " + Math.round(tmpData.length/epochSize));
+				System.out.println("Number of epochs found: " + peaksFound);
+			}
+			
+			// Check if average p-p distance is reasonable
+			
+			// Throw out any epoch peaks after which var > mean(var(prev)), assume first 20 epochs are fine
+			
 		}
 		else
 		{
 			System.out.println("File not found: " + args[0] );
 		}
 
+	}
+
+	public static double[] getAverage(short[] data, int StimulusDurationSamples){
+
+		double[] average=new double[StimulusDurationSamples];
+		int grandInt=0;
+		int openEyes=0;
+		//Estimate peak amplitude
+		double peakAmp=getPeakStats(data);
+		int peakSign=0, peakRecord=0;
+		for(int i=0; i<data.length;i++){
+			if(openEyes > StimulusDurationSamples){
+				if( Math.abs(data[i]) >= peakAmp){
+					//If peak detected, reset open-eyes to start averaging
+					openEyes=0;
+					System.out.println("onset detected: " + i);
+					peakSign=(data[i]>0) ? 1:-1;
+					peakRecord+=peakSign;
+				}
+			}else{
+				if(peakSign<0){
+					//Dealing with small amp stimulus, add them up 
+					average[openEyes]+=data[i];
+				}else{
+					//Dealing with 3x amp stimulus. Subtract to get the non-linear reponse
+					average[openEyes]-=data[i];
+					//Check if the record was correct and reset the record
+					if(peakRecord != 3)
+						System.err.println("Unexpected number of peaks in averaging: " + peakRecord);
+					peakRecord=0;
+					grandInt++;
+				}
+				if(peakRecord > 3 || peakRecord<0)
+					System.err.println("Unexpected number of peaks in averaging: " + peakRecord);
+			}
+			openEyes++;
+		}
+		
+		return average;
+	}
+
+	public static void findOnset(short[] data, int StimulusDurationSamples){
+
+		ArrayList<Integer> onsetIndices= new ArrayList<Integer>();
+		int openEyes=0;
+
+		//Estimate peak amplitude
+		double peakAmp=getPeakStats(data);
+		for(int i=0; i<data.length;i++){
+			if(openEyes < 0){
+				if( Math.abs(data[i]) >= peakAmp){
+					onsetIndices.add(i);
+					openEyes=StimulusDurationSamples+1;
+					System.out.println("onset detected: " + i);
+				}
+			}
+			openEyes--;
+		}
+
+
+	}
+
+
+	public static double getPeakStats(short[] tmpData){
+		//Find the location of the peaks sing simple stats from the middle  of the waveform
+		double peakAmp=0;
+		int weight=1;
+		for(int i=(2*tmpData.length/4);i<(3*tmpData.length/4);i++){
+			//peakAmp=((weight-1)*peakAmp + Math.log(Math.abs(tmpData[i])))/weight;
+			peakAmp=(peakAmp < Math.abs(tmpData[i])) ? Math.abs(tmpData[i]): peakAmp;
+		}
+		return peakAmp*0.8;
+		//return Math.pow(10,peakAmp);
 	}
 
 	/*
@@ -326,21 +433,3 @@ public class TEOAEAnalysis {
 	}
 	 */
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
