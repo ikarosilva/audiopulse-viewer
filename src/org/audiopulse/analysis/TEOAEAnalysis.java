@@ -1,6 +1,5 @@
 package org.audiopulse.analysis;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.math3.stat.*;
 import org.audiopulse.utilities.*;
@@ -20,45 +19,82 @@ public class TEOAEAnalysis {
 	static final double Fs = 16000;	 					
 	static final double epochTime = 0.020;// Time units for search windows (in seconds) 			 
 	static final int epochSize = (int) Math.round(epochTime*Fs);
-
-	public static double getThreshold(double[] absData){
+	static final int onsetDelay= (int) Math.round(Fs*0.2);//Peak processing delay in order to avoid transient artifacts
+	
+	public static double getThreshold(double[] audioData){
 		double peakThreshold = 0;
 		int numberOfEpochs =20;
-		int midPoint = Math.round(absData.length/2), leftPoint, rightPoint;
+		int percThreshold=99;
+		
+		int midPoint = Math.round(audioData.length/2), leftPoint, rightPoint;
 		leftPoint = midPoint - (epochSize*numberOfEpochs);
 		rightPoint = midPoint + ( epochSize*numberOfEpochs);
 
+		// Get an idea of the signal max to determine the threshold			
+		double[] absData= new double[rightPoint-leftPoint];
+		for (int j = 0; j < absData.length; j++) 
+			absData[j] = Math.abs(audioData[leftPoint+j]);
+		
 		// The threshold is the 75th percentile of the mid range data
-		peakThreshold = StatUtils.percentile(Arrays.copyOfRange(absData, leftPoint, rightPoint)
-				, 75);
+		peakThreshold = StatUtils.percentile(absData,percThreshold);
 		return peakThreshold;
 
 	}
 
-	public static List<Integer>  getPeakIndices(double[] absData, double peakThreshold){
+	public static List<Integer>  getPeakIndices(double[] audioData, double peakThreshold){
 		int winSlide = (int) Math.round(epochSize/2);
 		int k, j;
 		List<Integer> peakInd = new ArrayList<Integer>();	
-		double peakCandVal; //peak value, and is its index
+		double peakCandVal, tmpVal; //peak value, and is its index
 		int peakCandInd;
-		System.out.println("step size: " + winSlide);
-		//Search in  epochSize windows for the peak, moving each time by winSlide plus peak
-		for (j = 0; j < (absData.length -  epochSize); j = j + winSlide)
+		int countNegative=0, countPositive=0;
+		boolean lookForNegative=true;
+		
+		//NOTE: To help with synchronization/timing issues, the procedures looks first for the biggest negative
+		//peak in the first epoch. From then on the next 3 epochs are expected to have positive peaks. After 3 positive
+		//peak epochs are found it then proceeds to find the biggest negative peak again and re-start the cycle. 
+		
+		for (j = onsetDelay; j < (audioData.length -  epochSize); j = j + winSlide)
 		{
 			//Get maximum peak value and location within epoch
 			peakCandVal=0;
 			peakCandInd=-1;
-			System.out.println("Searching: "  + j + " - " + (j+epochSize));
+			//System.out.println("Searching: "  + j + " - " + (j+epochSize));
 			for(k=j;k<(j+epochSize);k++){
-				if (absData[k] > peakThreshold){
-					peakCandInd = (absData[k] > peakCandVal) ? k:peakCandInd;
-					peakCandVal = (absData[k] > peakCandVal) ? 
-							absData[k]:peakCandVal;
+				tmpVal=Math.abs(audioData[k]);
+				if (tmpVal > peakThreshold && (tmpVal > peakCandVal)){
+					if(lookForNegative && (audioData[k] <0)){
+						//Looking for negative peaks only
+						peakCandInd = k;
+						peakCandVal = tmpVal;
+						countNegative++;
+					}else if(!lookForNegative && (audioData[k] >0) ){
+						//Looking for positive peaks only
+						peakCandInd = k;
+						peakCandVal = tmpVal;
+						countPositive++;
+					}
 				}			
 			}		
-			// If a peak was found take the max peak index as the new peak
+
 			if(peakCandInd >= 0){
-				peakInd.add(peakCandInd);				
+				//Peak found, take the max as the new peak
+				peakInd.add(peakCandInd);	
+				
+				//if 3 positive peaks where found, Look for a negative peak next
+				if(countPositive == 3){
+					countPositive=0;
+					countNegative=0;
+					lookForNegative=true;
+				}
+				
+				//if 1 negative peak was found, Look for 3 positive peaks next
+				if(countNegative >0){
+					countPositive=0;
+					countNegative=0;
+					lookForNegative=false;
+				}
+				
 				// Move j to peak location + 1, so the next search will be from peak + 20 msec
 				j = peakCandInd + 1;
 			}
@@ -73,6 +109,7 @@ public class TEOAEAnalysis {
 		int countPositive=0, countNegative=0;
 		int countMismatched=0;
 		boolean start=false, isNegative;
+		int expectedNegativePeaks= Math.round ((audioData.length-onsetDelay)/(4*epochSize));
 		//TODO: Set tolerance for number of mismatches
 
 		for(int n=0; n<peakInd.size();n++){
@@ -110,27 +147,24 @@ public class TEOAEAnalysis {
 
 		System.out.println("Averaged : " + countNegative + " negative peaks, " + countPositive
 				+ " positive peaks. With " + countMismatched + " mismatches");
+		System.out.println("Expected about : " + expectedNegativePeaks + " negative peaks, with epoch time of: "
+				+ epochTime + " seconds");
 		return sum;
 	}
 
 	public static double[] runAnalysis(short[] rawData){
-		double[] audioData = null, absData = null, epochAverage; 	
+		double[] audioData = null, epochAverage; 	
 		double peakThreshold = 0;
 
 		// Convert the raw data from short to double
 		audioData = AudioSignal.convertMonoToDouble(rawData);
 
-		// Get an idea of the signal max to determine the threshold			
-		absData= new double[audioData.length];
-		for (int j = 0; j < audioData.length; j++) 
-			absData[j] = Math.abs(audioData[j]);
-
 		//Estimate peak threshold
-		peakThreshold=getThreshold(absData);
+		peakThreshold=getThreshold(audioData);
 
 		//Get peak indices
 		System.out.println("Searching for epochs...");
-		List<Integer> peakInd = getPeakIndices(absData,peakThreshold);
+		List<Integer> peakInd = getPeakIndices(audioData,peakThreshold);
 
 		//Get average 4sub waveform
 		epochAverage = get4AverageWaveform(audioData,peakInd);
