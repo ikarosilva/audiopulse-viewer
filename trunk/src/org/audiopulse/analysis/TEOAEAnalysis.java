@@ -133,12 +133,22 @@ public class TEOAEAnalysis {
 		List<Integer> peakInd = getPeakIndices(absData,peakThreshold);
 
 		//Get average 4sub waveform
-		epochAverage = get4AverageWaveform(audioData,peakInd);	
+		epochAverage = get4AverageWaveform(audioData,peakInd);
+		
+		plotRawEpochs(audioData,peakInd);
+		
+		
 		return epochAverage;
 		
 		// Do the FFT of the averaged epoch
 		//double[][] XFFT= TEOAEAnalysis.getSpectrum(rawData,Fs,epochTime);
 	}
+	
+	public static void plotRawEpochs(double[] audioData, List<Integer> peakInd){
+		//Use this method for help in debugging the epoch selection routine
+		PlotEpochsTEOAE mplot= new PlotEpochsTEOAE("TEOAE",audioData,peakInd);
+	}
+	
 	
 	public static void main(String[] args) throws Exception 
 	{
@@ -148,9 +158,8 @@ public class TEOAEAnalysis {
 		short[] rawData = ShortFile.readFile(filename);
 
 		double[] epochAverage=runAnalysis(rawData);
-		//PlotFrame plot = new PlotFrame("tmp.png","time","TEOAE",tmpData);
-		//plot.showPlot();
-
+		
+		
 
 
 	}
