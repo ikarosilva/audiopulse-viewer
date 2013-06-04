@@ -125,11 +125,12 @@ public class PlotEpochsTEOAE extends ApplicationFrame {
 			signal.add(n,audioData[n]);
 		}
 		result.addSeries(signal);
-		for(int n=0;n<peakInd.size();n++) {
-			epoch.add((int) peakInd.get(n),audioData[peakInd.get(n)]);
+		if(peakInd != null){
+			for(int n=0;n<peakInd.size();n++) {
+				epoch.add((int) peakInd.get(n),audioData[peakInd.get(n)]);
+			}
+			result.addSeries(epoch);
 		}
-
-		result.addSeries(epoch);
 		return result;
 
 	}

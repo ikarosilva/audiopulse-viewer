@@ -135,7 +135,7 @@ public class TEOAEAnalysis {
 				//Passed the first negative peak. Keep running sum
 				//Sum to the running average
 				for(int k=0;k<sum.length;k++)
-					sum[k]+=audioData[peakInd.get(n)];
+					sum[k]+=audioData[peakInd.get(n)+k];
 			}
 
 		}
@@ -169,7 +169,8 @@ public class TEOAEAnalysis {
 		//Get average 4sub waveform
 		epochAverage = get4AverageWaveform(audioData,peakInd);
 		
-		plotRawEpochs(audioData,peakInd);
+		//Uncoment this to help debug Peak picking procedures
+		//plotRawEpochs(audioData,peakInd);
 		
 		
 		return epochAverage;
@@ -193,8 +194,9 @@ public class TEOAEAnalysis {
 
 		double[] epochAverage=runAnalysis(rawData);
 		
-		
-
+		//Plot averaged waveform
+		PlotEpochsTEOAE mplot= new PlotEpochsTEOAE("TEOAE Average"
+				,epochAverage,null);
 
 	}
 
