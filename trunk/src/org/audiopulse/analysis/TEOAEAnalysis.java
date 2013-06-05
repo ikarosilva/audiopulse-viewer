@@ -1,5 +1,6 @@
 package org.audiopulse.analysis;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.math3.stat.*;
 import org.audiopulse.utilities.*;
@@ -20,12 +21,21 @@ public class TEOAEAnalysis {
 	static final double epochTime = 0.020;// Time units for search windows (in seconds) 			 
 	static final int epochSize = (int) Math.round(epochTime*Fs);
 	static final int onsetDelay= (int) Math.round(Fs*0.2);//Peak processing delay in order to avoid transient artifacts
-	
+
+	//Set the start time from which to start analzying the averaged
+	//epoch response in order to avoid transients (in seconds)
+	static final int epochOnsetDelay= (int) Math.round(Fs*0.014);
+
+	//Frequencies at which to look for a response
+	static final double[] fResp={2,3,4};
+	//Tolerance, in Hz, from which to get the closest FFT bin relative to the actual desired frequency
+	static final double spectralTolerance=50; 
+
 	public static double getThreshold(double[] audioData){
 		double peakThreshold = 0;
 		int numberOfEpochs =20;
 		int percThreshold=99;
-		
+
 		int midPoint = Math.round(audioData.length/2), leftPoint, rightPoint;
 		leftPoint = midPoint - (epochSize*numberOfEpochs);
 		rightPoint = midPoint + ( epochSize*numberOfEpochs);
@@ -34,7 +44,7 @@ public class TEOAEAnalysis {
 		double[] absData= new double[rightPoint-leftPoint];
 		for (int j = 0; j < absData.length; j++) 
 			absData[j] = Math.abs(audioData[leftPoint+j]);
-		
+
 		// The threshold is the 75th percentile of the mid range data
 		peakThreshold = StatUtils.percentile(absData,percThreshold);
 		return peakThreshold;
@@ -49,11 +59,11 @@ public class TEOAEAnalysis {
 		int peakCandInd;
 		int countNegative=0, countPositive=0;
 		boolean lookForNegative=true;
-		
+
 		//NOTE: To help with synchronization/timing issues, the procedures looks first for the biggest negative
 		//peak in the first epoch. From then on the next 3 epochs are expected to have positive peaks. After 3 positive
 		//peak epochs are found it then proceeds to find the biggest negative peak again and re-start the cycle. 
-		
+
 		for (j = onsetDelay; j < (audioData.length -  epochSize); j = j + winSlide)
 		{
 			//Get maximum peak value and location within epoch
@@ -80,21 +90,21 @@ public class TEOAEAnalysis {
 			if(peakCandInd >= 0){
 				//Peak found, take the max as the new peak
 				peakInd.add(peakCandInd);	
-				
+
 				//if 3 positive peaks where found, Look for a negative peak next
 				if(countPositive == 3){
 					countPositive=0;
 					countNegative=0;
 					lookForNegative=true;
 				}
-				
+
 				//if 1 negative peak was found, Look for 3 positive peaks next
 				if(countNegative >0){
 					countPositive=0;
 					countNegative=0;
 					lookForNegative=false;
 				}
-				
+
 				// Move j to peak location + 1, so the next search will be from peak + 20 msec
 				j = peakCandInd + 1;
 			}
@@ -152,12 +162,9 @@ public class TEOAEAnalysis {
 		return sum;
 	}
 
-	public static double[] runAnalysis(short[] rawData){
-		double[] audioData = null, epochAverage; 	
+	public static double[] getTemporalAverage(double[] audioData){
+		double[] epochAverage; 	
 		double peakThreshold = 0;
-
-		// Convert the raw data from short to double
-		audioData = AudioSignal.convertMonoToDouble(rawData);
 
 		//Estimate peak threshold
 		peakThreshold=getThreshold(audioData);
@@ -168,23 +175,97 @@ public class TEOAEAnalysis {
 
 		//Get average 4sub waveform
 		epochAverage = get4AverageWaveform(audioData,peakInd);
-		
+
 		//Uncoment this to help debug Peak picking procedures
 		//plotRawEpochs(audioData,peakInd);
-		
-		
+
 		return epochAverage;
-		
-		// Do the FFT of the averaged epoch
-		//double[][] XFFT= TEOAEAnalysis.getSpectrum(rawData,Fs,epochTime);
 	}
-	
+
+
+	public static double[] getEvokedResponse(double[] average){
+		
+		int totalPoints=epochSize-epochOnsetDelay;
+		int cutPoint=(int) Math.pow(2,
+				(int) Math.floor(Math.log(totalPoints)/Math.log(2)));
+		double[] trimAverage=Arrays.copyOfRange(average,
+				epochSize-cutPoint-1,epochSize-1);
+		double[][] responseFFT= SignalProcessing.getSpectrum(trimAverage,
+				Fs,trimAverage.length);
+		double[] results= new double[fResp.length];
+
+		for(int n=0;n<fResp.length;n++)
+			results[n]=getResponse(responseFFT,fResp[n],spectralTolerance);
+
+		return results;
+	}
+
+	public static double getResponse(double[][] XFFT, double desF, double tolerance){
+
+		//Search through the spectrum to get the closest bin 
+		//to the respective frequencies
+		double dminF=Short.MAX_VALUE;
+		double dF; 
+		double result=-1;
+		int ind=0;
+		for(int n=0;n<XFFT[0].length;n++){
+			dF=Math.abs(XFFT[0][n]-desF);
+			if( dF < dminF ){
+				dminF=dF;
+				result=XFFT[1][n];
+				ind =n;
+			}		
+		}
+		if(dminF > tolerance){
+			double  actF=XFFT[0][ind];
+			System.err.println("Results are innacurate because frequency tolerance has been exceeded. Desired F= "
+					+ desF +" closest F= " + actF);
+		}
+		return result;
+	}
+
+
 	public static void plotRawEpochs(double[] audioData, List<Integer> peakInd){
 		//Use this method for help in debugging the epoch selection routine
-		PlotEpochsTEOAE mplot= new PlotEpochsTEOAE("TEOAE",audioData,peakInd);
+		PlotEpochsTEOAE mplot= new PlotEpochsTEOAE("TEOAE",audioData,peakInd,Fs);
 	}
-	
-	
+
+	private static double getNoiseEstimate(double[] audioData) {
+		// Estimate noise by holding a fixed point wrt to the epoch and measuring its 
+		//variance across every other 4th epoch
+		int nPoints=32, pointStep; //How many points in an epoch to be used for variance estimation
+		//Based on previous work related to ABR (see Fsp)
+		double[] mean= new double[nPoints];
+		double[] pow= new double[nPoints];
+		int count=0;
+		double var=0, residueNoiseVar=0, tmpVar;
+		if(nPoints > epochSize){
+			System.err.println("Epoch size (" + epochSize + 
+					") is smaller than the number of points required for noise " +
+					"estimation: " + nPoints);
+			//TODO: throw exception instead ??
+		}
+		pointStep=Math.round(epochSize/nPoints);
+
+		for(int n=0; n<(audioData.length-epochSize);n=n+(4*epochSize) ){
+			for(int k=0;k<epochSize;k=k+pointStep){
+				mean[k/pointStep]=(count*mean[k/pointStep] + audioData[n+k])/(count+1);
+				pow[k/pointStep]=(count*pow[k/pointStep] + audioData[n+k]*audioData[n+k])/(count+1);
+			}
+			count++;
+		}
+
+		//Estimate the variance and the standard error, averaged across
+		//the nPoints independent points
+		for(int k=0;k<nPoints;k++){
+			tmpVar=pow[k]-(mean[k]*mean[k]);
+			var=(k*var + tmpVar)/(k+1);
+		}
+		residueNoiseVar= var/count;
+		return residueNoiseVar;
+	}
+
+
 	public static void main(String[] args) throws Exception 
 	{
 
@@ -192,11 +273,20 @@ public class TEOAEAnalysis {
 		String filename="/home/ikaro/TEOAE_Samples/AP_TEOAE-kHz-Sat-Mar-02-13-58-20-EST-2013.raw";
 		short[] rawData = ShortFile.readFile(filename);
 
-		double[] epochAverage=runAnalysis(rawData);
-		
+		// Convert the raw data from short to double
+		double[] audioData = AudioSignal.convertMonoToDouble(rawData);
+
+		double[] epochAverage=getTemporalAverage(audioData);
+		double residueNoiseVar=getNoiseEstimate(audioData);
+		double[] results=getEvokedResponse(epochAverage);
+		System.out.println("Noise level is: " + residueNoiseVar);
+
+		System.out.println("response[0] level is: " + results[0]);
+		System.out.println("response[1] level is: " + results[1]);
+		System.out.println("response[2] level is: " + results[2]);
 		//Plot averaged waveform
 		PlotEpochsTEOAE mplot= new PlotEpochsTEOAE("TEOAE Average"
-				,epochAverage,null);
+				,epochAverage,null,Fs);
 
 	}
 

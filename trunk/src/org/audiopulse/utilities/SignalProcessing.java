@@ -83,7 +83,15 @@ public class SignalProcessing {
 		return Math.pow(10, a/20);
 	}
 
-	public static double[][] getSpectrum(short[] x, double Fs, int SPEC_N){
+	public static double[][] getSpectrum(short [] x, double Fs, int SPEC_N){
+		double[] y= new double[x.length];
+		for(int i=0;i<x.length;i++){
+			y[i]=(double) x[i];
+		}	
+		return getSpectrum(y,Fs,SPEC_N);
+		
+	}
+	public static double[][] getSpectrum(double[] x, double Fs, int SPEC_N){
 		FastFourierTransformer FFT = new 
 				FastFourierTransformer(DftNormalization.STANDARD);
 		//Calculate the size of averaged waveform
@@ -96,7 +104,7 @@ public class SignalProcessing {
 		double[][] Pxx = new double[2][SPEC_N/2];
 		double tmpPxx;
 		double SpectrumResolution = Fs/SPEC_N;
-		double REFMAX=(double) Short.MAX_VALUE; //Normalizing value
+		double REFMAX=Short.MAX_VALUE; //Normalizing value
 
 		//Break FFT averaging into SPEC_N segments for averaging
 		//Calculate spectrum, variation based on
