@@ -77,9 +77,9 @@ import org.jfree.ui.RefineryUtilities;
 public class PlotEpochsTEOAE extends ApplicationFrame {
 
 	public PlotEpochsTEOAE(String title,double[] audioData,
-			List<Integer> peakInd) {
+			List<Integer> peakInd, double Fs) {
 		super(title);
-		JPanel chartPanel = createDemoPanel(audioData,peakInd);
+		JPanel chartPanel = createDemoPanel(audioData,peakInd,Fs);
 		chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
 		setContentPane(chartPanel);
 		this.pack();
@@ -115,19 +115,20 @@ public class PlotEpochsTEOAE extends ApplicationFrame {
 	}
 
 	public static XYDataset createDataset(double[] audioData,
-			List<Integer> peakInd) {
+			List<Integer> peakInd, double Fs) {
 		XYSeriesCollection result = new XYSeriesCollection();
 		XYSeries signal = new XYSeries(1);
 		XYSeries epoch = new XYSeries(2);
 
 		//Insert data into plotting series 
 		for(int n=0;n<audioData.length;n++){
-			signal.add(n,audioData[n]);
+			signal.add((double) n/Fs,audioData[n]);
 		}
 		result.addSeries(signal);
 		if(peakInd != null){
 			for(int n=0;n<peakInd.size();n++) {
-				epoch.add((int) peakInd.get(n),audioData[peakInd.get(n)]);
+				epoch.add((double) peakInd.get(n)/Fs,
+						audioData[peakInd.get(n)]);
 			}
 			result.addSeries(epoch);
 		}
@@ -141,8 +142,8 @@ public class PlotEpochsTEOAE extends ApplicationFrame {
 	 * @return A panel.
 	 */
 	public static JPanel createDemoPanel(double[] audioData,
-			List<Integer> peakInd) {
-		JFreeChart chart = createChart(createDataset(audioData,peakInd));
+			List<Integer> peakInd, double Fs) {
+		JFreeChart chart = createChart(createDataset(audioData,peakInd, Fs));
 		return new ChartPanel(chart);
 	}
 
