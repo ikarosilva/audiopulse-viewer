@@ -105,7 +105,7 @@ public class SignalProcessing {
 		double tmpPxx;
 		double SpectrumResolution = Fs/SPEC_N;
 		double REFMAX=Short.MAX_VALUE; //Normalizing value
-
+		double scaleFactor=SPEC_N*2*Math.PI;
 		//Break FFT averaging into SPEC_N segments for averaging
 		//Calculate spectrum, variation based on
 		//http://www.mathworks.com/support/tech-notes/1700/1702.html
@@ -121,8 +121,8 @@ public class SignalProcessing {
 			}
 			tmpFFT=FFT.transform(winData,TransformType.FORWARD);
 			for(int k=0;k<(SPEC_N/2);k++){
-				tmpPxx = tmpFFT[k].abs()/(double)SPEC_N;
-				tmpPxx*=tmpPxx; //Not accurate for the DC & Nyquist, but we are not using it!
+				tmpPxx = tmpFFT[k].abs();
+				tmpPxx=(tmpPxx*tmpPxx)/scaleFactor; //Not accurate for the DC & Nyquist, but we are not using it!
 				Pxx[1][k]=( (i*Pxx[1][k]) + tmpPxx )/((double) i+1); //averaging
 			}
 		}
@@ -132,7 +132,6 @@ public class SignalProcessing {
 			Pxx[0][i]=SpectrumResolution*i;
 			Pxx[1][i]=10*Math.log10(Pxx[1][i]);
 		}
-
 		return Pxx;
 	}
 

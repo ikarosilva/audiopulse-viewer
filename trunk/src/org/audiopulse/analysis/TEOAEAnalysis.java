@@ -20,7 +20,7 @@ public class TEOAEAnalysis {
 	static final double Fs = 16000;	 					
 	static final double epochTime = 0.020;// Time units for search windows (in seconds) 			 
 	static final int epochSize = (int) Math.round(epochTime*Fs);
-	static final int onsetDelay= (int) Math.round(Fs*0.2);//Peak processing delay in order to avoid transient artifacts
+	static int onsetDelay= (int) Math.round(Fs*0.1);//Peak processing delay in order to avoid transient artifacts
 
 	//Set the start time from which to start analzying the averaged
 	//epoch response in order to avoid transients (in seconds)
@@ -64,7 +64,12 @@ public class TEOAEAnalysis {
 		//peak in the first epoch. From then on the next 3 epochs are expected to have positive peaks. After 3 positive
 		//peak epochs are found it then proceeds to find the biggest negative peak again and re-start the cycle. 
 
-		for (j = onsetDelay; j < (audioData.length -  epochSize); j = j + winSlide)
+		//Find initial peak indix based on matched filtering
+		int endIndex=epochSize*4*20;
+		endIndex=(endIndex>audioData.length-onsetDelay) ? 
+				(audioData.length-onsetDelay):endIndex;
+		int start=find4EpochOnset(Arrays.copyOfRange(audioData, onsetDelay,endIndex));
+		for (j = onsetDelay+ start; j < (audioData.length -  epochSize); j = j + winSlide)
 		{
 			//Get maximum peak value and location within epoch
 			peakCandVal=0;
@@ -175,7 +180,6 @@ public class TEOAEAnalysis {
 		peakThreshold=getThreshold(audioData);
 
 		//Get peak indices
-		System.out.println("Searching for epochs...");
 		List<Integer> peakInd = getPeakIndices(audioData,peakThreshold);
 
 		//Get average 4sub waveform
@@ -188,11 +192,32 @@ public class TEOAEAnalysis {
 	}
 
 
-	public static double[] getEvokedResponse(double[] average){
+	public static int find4EpochOnset(double[] data){
+		//Searches for 4 epoch onset based on matched filtering
+		double[] filter={-1,1,1,1};
+		int M=(int) Math.floor((double) data.length/(4*epochSize));
+		int L=6*epochSize; //Cross correlation of six epoch durations
+		double[] sumBuffer=new double[L]; 
+		int j, m, maxInd=-1;
+		double maxVal=0;
+		for(j=0;j<L;j++){
+			for(m=0;m<M;m++){
+				sumBuffer[j]+=data[j+ (epochSize*m)]*filter[m%4];
+			}
+		}
+		//Maximum value is the onset
+		for(j=0;j<L;j++){
+			if(sumBuffer[j] > maxVal){
+				maxInd=j;
+				maxVal=sumBuffer[j];
+			}
+		}
 		
-		int totalPoints=epochSize-epochOnsetDelay;
-		int cutPoint=(int) Math.pow(2,
-				(int) Math.floor(Math.log(totalPoints)/Math.log(2)));
+		return maxInd;
+	}
+
+	public static double[] getEvokedResponse(double[] average,int cutPoint){
+
 		double[] trimAverage=Arrays.copyOfRange(average,
 				epochSize-cutPoint-1,epochSize-1);
 		double[][] responseFFT= SignalProcessing.getSpectrum(trimAverage,
@@ -266,7 +291,7 @@ public class TEOAEAnalysis {
 			tmpVar=pow[k]-(mean[k]*mean[k]);
 			var=(k*var + tmpVar)/(k+1);
 		}
-		residueNoiseVar= var/count;
+		residueNoiseVar= var/count;		
 		return residueNoiseVar;
 	}
 
@@ -278,15 +303,27 @@ public class TEOAEAnalysis {
 		String filename="/home/ikaro/TEOAE_Samples/AP_TEOAE-kHz-Sat-Mar-02-13-58-20-EST-2013.raw";
 		short[] rawData = ShortFile.readFile(filename);
 
+		System.out.println(rawData.length + "  / epoch size= " 
+				+ ((double) rawData.length/epochSize));
+
 		// Convert the raw data from short to double
 		double[] audioData = AudioSignal.convertMonoToDouble(rawData);
 
 		double[] epochAverage=getTemporalAverage(audioData);
 		double residueNoiseVar=getNoiseEstimate(audioData);
-		double[] results=getEvokedResponse(epochAverage);
+		int fftSize=(int) Math.pow(2,
+				(int) Math.floor(Math.log(epochSize-epochOnsetDelay)/Math.log(2)));
+		double[] results=getEvokedResponse(epochAverage,fftSize);
+		
+		//Normalize and convert to dB wrt Short.MAX
+		//as is done in the getResponse method
+		residueNoiseVar=residueNoiseVar/(Short.MAX_VALUE*Short.MAX_VALUE);
+		residueNoiseVar=10*Math.log10(residueNoiseVar/(fftSize*2*Math.PI));
+		
 		System.out.println("Noise level is: " + residueNoiseVar);
 
-		System.out.println("response[0] level is: " + results[0]);
+		System.out.println("response[0] level is: " + results[0] +
+				" with " + fftSize + " fft bins");
 		System.out.println("response[1] level is: " + results[1]);
 		System.out.println("response[2] level is: " + results[2]);
 		//Plot averaged waveform
