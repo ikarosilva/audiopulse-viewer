@@ -89,7 +89,12 @@ public class TEOAEAnalysis {
 
 			if(peakCandInd >= 0){
 				//Peak found, take the max as the new peak
-				peakInd.add(peakCandInd);	
+				//For tag negative peaks with negative sign
+				if(lookForNegative ==false){
+					peakInd.add(peakCandInd);
+				}else{
+					peakInd.add(-1*peakCandInd);
+				}
 
 				//if 3 positive peaks where found, Look for a negative peak next
 				if(countPositive == 3){
@@ -126,7 +131,7 @@ public class TEOAEAnalysis {
 			//NOTE: ASSUMPTION: Negative peaks are 3x bigger than the positive peaks!!!
 			//Check polarity of the peak, only start after the first negative peak due to
 			//possible transients
-			isNegative=(audioData[peakInd.get(n)]<0);
+			isNegative=(audioData[Math.abs(peakInd.get(n))]<0);
 			if(isNegative){
 				if(start){
 					//After find the first negative peak, there should always be 3 positive peaks
@@ -145,7 +150,7 @@ public class TEOAEAnalysis {
 				//Passed the first negative peak. Keep running sum
 				//Sum to the running average
 				for(int k=0;k<sum.length;k++)
-					sum[k]+=audioData[peakInd.get(n)+k];
+					sum[k]+=audioData[Math.abs(peakInd.get(n))+k];
 			}
 
 		}
@@ -177,7 +182,7 @@ public class TEOAEAnalysis {
 		epochAverage = get4AverageWaveform(audioData,peakInd);
 
 		//Uncoment this to help debug Peak picking procedures
-		//plotRawEpochs(audioData,peakInd);
+		plotRawEpochs(audioData,peakInd);
 
 		return epochAverage;
 	}
