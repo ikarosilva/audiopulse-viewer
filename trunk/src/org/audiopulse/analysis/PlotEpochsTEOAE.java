@@ -118,19 +118,29 @@ public class PlotEpochsTEOAE extends ApplicationFrame {
 			List<Integer> peakInd, double Fs) {
 		XYSeriesCollection result = new XYSeriesCollection();
 		XYSeries signal = new XYSeries(1);
-		XYSeries epoch = new XYSeries(2);
+		XYSeries epochP = new XYSeries(2);
+		XYSeries epochN = new XYSeries(3);
 
 		//Insert data into plotting series 
 		for(int n=0;n<audioData.length;n++){
 			signal.add((double) n/Fs,audioData[n]);
 		}
 		result.addSeries(signal);
+	    double peak;
 		if(peakInd != null){
 			for(int n=0;n<peakInd.size();n++) {
-				epoch.add((double) peakInd.get(n)/Fs,
-						audioData[peakInd.get(n)]);
+				peak=(double) peakInd.get(n);
+				if(peak >=0){
+				epochP.add(peak/Fs,
+						audioData[(int) peak]);
+				}else{
+					peak=peak*-1;
+					epochN.add(peak/Fs,
+							audioData[(int) peak]);
+				}
 			}
-			result.addSeries(epoch);
+			result.addSeries(epochP);
+			result.addSeries(epochN);
 		}
 		return result;
 
