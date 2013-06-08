@@ -42,19 +42,14 @@ public class TEOAEKempClientAnalysis {
 		}
 		sigma[0]=Math.sqrt(pxx[0]-(mx[0]*mx[0]));
 		sigma[1]=Math.sqrt(pxx[1]-(mx[1]*mx[0]));
-		peakThreshold[0]=0;//mx[0]+(percThreshold*sigma[0]);
-		peakThreshold[1]=0;//mx[1]-(percThreshold*sigma[1]);
+		peakThreshold[0]=mx[0]+(percThreshold*sigma[0]);
+		peakThreshold[1]=mx[1]-(percThreshold*sigma[1]);
 
-		peakThreshold[0]=(peakThreshold[0] > max[0]) ? 
-				max[0]:peakThreshold[0];
-		peakThreshold[1]=(peakThreshold[1] > max[1]) ? 
-						max[1]:peakThreshold[1];
+		peakThreshold[0]=(peakThreshold[0] > max[0]) ? max[0]:peakThreshold[0];
+		peakThreshold[1]=(peakThreshold[1] > max[1]) ? max[1]:peakThreshold[1];
 
-						PlotEpochsTEOAE mplot2= new PlotEpochsTEOAE("tmpData"
-								,tmpData,null,16000);
-
-						Log.v(TAG,"Using peakThreshold of= " + peakThreshold[0] + " and " + peakThreshold[1]);
-						return peakThreshold;
+		Log.v(TAG,"Using peakThreshold of= " + peakThreshold[0] + " and " + peakThreshold[1]);
+		return peakThreshold;
 
 	}
 
@@ -325,6 +320,9 @@ public class TEOAEKempClientAnalysis {
 		double[] audioData = AudioSignal.convertMonoToDouble(rawData);
 		Log.v(TAG,"estimating average");
 		double[] epochAverage=getTemporalAverage(audioData,epochSize,Fs);
+		
+		PlotEpochsTEOAE mplot2= new PlotEpochsTEOAE("epochAverage"
+				,epochAverage,null,16000);
 		Log.v(TAG,"estimating noise");
 		double residueNoiseVar=getNoiseEstimate(audioData,epochSize);
 		int fftSize=(int) Math.pow(2,
