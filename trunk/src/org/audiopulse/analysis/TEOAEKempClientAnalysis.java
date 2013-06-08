@@ -42,12 +42,12 @@ public class TEOAEKempClientAnalysis {
 		}
 		sigma[0]=Math.sqrt(pxx[0]-(mx[0]*mx[0]));
 		sigma[1]=Math.sqrt(pxx[1]-(mx[1]*mx[0]));
-		peakThreshold[0]=mx[0]+(percThreshold*sigma[0]);
-		peakThreshold[1]=mx[1]-(percThreshold*sigma[1]);
+		peakThreshold[0]=0;//mx[0]+(percThreshold*sigma[0]);
+		peakThreshold[1]=0;//mx[1]-(percThreshold*sigma[1]);
 
 		peakThreshold[0]=(peakThreshold[0] > max[0]) ? 
 				max[0]:peakThreshold[0];
-				peakThreshold[1]=(peakThreshold[1] > max[1]) ? 
+		peakThreshold[1]=(peakThreshold[1] > max[1]) ? 
 						max[1]:peakThreshold[1];
 
 						PlotEpochsTEOAE mplot2= new PlotEpochsTEOAE("tmpData"
@@ -81,7 +81,6 @@ public class TEOAEKempClientAnalysis {
 		double peakCandVal; //peak value, and is its index
 		int peakCandInd;
 		int countNegative=0, countPositive=0;
-		boolean lookForNegative=true;
 		int onsetDelay= (int) Math.round(Fs*0.01);//Peak processing delay in order to avoid transient artifacts
 		//NOTE: To help with synchronization/timing issues, the procedures looks first for the biggest negative
 		//peak in the first epoch. From then on the next 3 epochs are expected to have positive peaks. After 3 positive
@@ -110,10 +109,10 @@ public class TEOAEKempClientAnalysis {
 					//Get maximum peak value and location within epoch
 					peakCandInd=getAbsMaxInd(audioData,j,j+epochSize);
 					peakCandVal=audioData[peakCandInd];
-					if ( (peakCandVal > peakThreshold[0]) && !lookForNegative){
+					if ( (peakCandVal > peakThreshold[0]) ){
 						//Looking for positive peaks only
 						countPositive++;
-					}else if((peakCandVal < peakThreshold[1])  && lookForNegative  ){
+					}else if((peakCandVal < peakThreshold[1]) ){
 						//Looking for negative peaks only
 						peakCandInd=peakCandInd*-1; //Tag negative peaks with negative indices for later analysis
 						countNegative++;
@@ -130,22 +129,8 @@ public class TEOAEKempClientAnalysis {
 							Log.w(TAG,"Last peak index is too short for processing: " + Math.abs(peakCandInd) );
 						}else{
 							Log.w(TAG,"cP " + countPositive + " cN " + countNegative +
-									" ind= "+ (peakCandInd)/(16000.0) +" bool-" +lookForNegative );
+									" ind= "+ (peakCandInd)/(16000.0));
 							peakInd.add(Math.abs(peakCandInd));
-						}
-
-						//if 3 positive peaks where found, Look for a negative peak next
-						if(countPositive == 3){
-							countPositive=0;
-							countNegative=0;
-							lookForNegative=true;
-						}
-
-						//if 1 negative peak was found, Look for 3 positive peaks next
-						if(countNegative == 1){
-							countPositive=0;
-							countNegative=0;
-							lookForNegative=false;
 						}
 						j=Math.abs(peakCandInd)+1;
 					}
