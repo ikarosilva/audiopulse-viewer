@@ -25,19 +25,18 @@ class TEOAEAnalysis {
 	public static void main(String[] args) throws Exception 
 	{
 		int Fs=16000;
-		double epochTime=0.015;//Signals.getclickKempSweepDurationSeconds();
+		double epochTime=0.03;//Signals.getclickKempSweepDurationSeconds();
 		int epochSize=(int) Math.round(Fs*epochTime);
 		// Read the data in 
-		String filename="/home/ikaro/APData/TEOAE/R1.raw";
+		String filename="/home/ikaro/APData/TEOAE/L1.raw";
 		short[] rawData = ShortFile.readFile(filename);
 		//rawData=simulate(rawData,epochSize);
 		System.out.println(rawData.length + "  epochTime= " 
 				+ epochTime);
 		
-		double[] test= Signals.clickKempMethod(Fs, 1);
-		
-		PlotEpochsTEOAE mplot2= new PlotEpochsTEOAE("stim"
-				,test,null,Fs);
+		//double[] test= Signals.clickKempMethod(Fs, 1);
+		//PlotEpochsTEOAE mplot2= new PlotEpochsTEOAE("stim"
+		//		,test,null,Fs);
 		
 		double[] results=TEOAEKempClientAnalysis.mainAnalysis(rawData,Fs,epochSize);
 		System.out.println("response[0] level is: " + results[0] );
