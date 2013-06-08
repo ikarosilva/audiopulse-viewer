@@ -1,5 +1,6 @@
 package org.audiopulse.analysis;
 import org.audiopulse.io.ShortFile;
+import org.audiopulse.utilities.Signals;
 
 class TEOAEAnalysis {
 	
@@ -32,6 +33,11 @@ class TEOAEAnalysis {
 		//rawData=simulate(rawData,epochSize);
 		System.out.println(rawData.length + "  epochTime= " 
 				+ epochTime);
+		
+		double[] test= Signals.clickKempMethod(Fs, 1);
+		
+		PlotEpochsTEOAE mplot2= new PlotEpochsTEOAE("stim"
+				,test,null,Fs);
 		
 		double[] results=TEOAEKempClientAnalysis.mainAnalysis(rawData,Fs,epochSize);
 		System.out.println("response[0] level is: " + results[0] );
