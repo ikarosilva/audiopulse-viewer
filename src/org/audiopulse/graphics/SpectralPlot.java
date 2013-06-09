@@ -30,6 +30,7 @@ public class SpectralPlot implements ChartRenderer{
 		this.title = title;
 		this.dataset = data;
 		this.Fres = Fres;
+		
 	}
 	
 	/**

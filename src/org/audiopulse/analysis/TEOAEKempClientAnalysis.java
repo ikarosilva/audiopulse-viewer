@@ -1,6 +1,8 @@
 package org.audiopulse.analysis;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.audiopulse.ui.SpectralPlotFrame;
 import org.audiopulse.utilities.*;
 
 
@@ -230,11 +232,18 @@ public class TEOAEKempClientAnalysis {
 	}
 
 	public static double[] getEvokedResponse(double[] average,int cutPoint,int epochSize, int Fs){
-
+		
 		double[] trimAverage=Signals.copyOfRange(average,
-				epochSize-cutPoint-1,epochSize-1);
+				average.length-cutPoint,average.length);
 		double[][] responseFFT= SignalProcessing.getSpectrum(trimAverage,
 				Fs,trimAverage.length);
+		
+		System.out.println("cut=" + (epochSize-cutPoint-1));
+		System.out.println("legnth=" + average.length);
+		System.out.println("trimmed=" + trimAverage.length);
+		SpectralPlotFrame plot=new
+				SpectralPlotFrame("Average Spec",responseFFT,
+						Fs/(2*responseFFT.length)) ;
 		double[] results= new double[fResp.length];
 
 		for(int n=0;n<fResp.length;n++)
