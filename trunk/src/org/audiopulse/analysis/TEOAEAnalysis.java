@@ -25,10 +25,10 @@ class TEOAEAnalysis {
 	public static void main(String[] args) throws Exception 
 	{
 		int Fs=16000;
-		double epochTime=0.03;//Signals.getclickKempSweepDurationSeconds();
+		double epochTime=0.04;//Signals.getclickKempSweepDurationSeconds();
 		int epochSize=(int) Math.round(Fs*epochTime);
 		// Read the data in 
-		String filename="/home/ikaro/APData/TEOAE/L1.raw";
+		String filename="/home/ikaro/APData/TEOAE/N0.raw";
 		short[] rawData = ShortFile.readFile(filename);
 		//rawData=simulate(rawData,epochSize);
 		System.out.println(rawData.length + "  epochTime= " 
