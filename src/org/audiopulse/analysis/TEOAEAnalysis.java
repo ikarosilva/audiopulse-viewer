@@ -1,6 +1,5 @@
 package org.audiopulse.analysis;
 import org.audiopulse.io.ShortFile;
-import org.audiopulse.utilities.Signals;
 
 class TEOAEAnalysis {
 	
@@ -25,10 +24,15 @@ class TEOAEAnalysis {
 	public static void main(String[] args) throws Exception 
 	{
 		int Fs=16000;
-		double epochTime=0.04;//Signals.getclickKempSweepDurationSeconds();
+		double epochTime=0.02;//Signals.getclickKempSweepDurationSeconds();
 		int epochSize=(int) Math.round(Fs*epochTime);
 		// Read the data in 
-		String filename="/home/ikaro/APData/TEOAE/N0.raw";
+		//20 Peaks are hard to distuinguish from noise
+		//25 - Peaks seam at the appropiate level, but there is 
+		//some noise do deal with
+		//30 - Peaks are still distuinguishable but seems to begin to saturate
+		//35 - Peaks seem to be saturating
+		String filename="/home/ikaro/APData/TEOAE/L30.raw";
 		short[] rawData = ShortFile.readFile(filename);
 		//rawData=simulate(rawData,epochSize);
 		System.out.println(rawData.length + "  epochTime= " 
