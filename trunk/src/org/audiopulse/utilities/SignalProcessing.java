@@ -4,6 +4,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
+import org.audiopulse.hardware.AcousticConverter;
 
 
 public class SignalProcessing {
@@ -86,7 +87,7 @@ public class SignalProcessing {
 	public static double[][] getSpectrum(short [] x, double Fs, int SPEC_N){
 		double[] y= new double[x.length];
 		for(int i=0;i<x.length;i++){
-			y[i]=(double) x[i];
+			y[i]=(double) x[i]/(Short.MAX_VALUE+1);
 		}	
 		return getSpectrum(y,Fs,SPEC_N);
 		
@@ -104,8 +105,7 @@ public class SignalProcessing {
 		double[][] Pxx = new double[2][SPEC_N/2];
 		double tmpPxx;
 		double SpectrumResolution = Fs/SPEC_N;
-		double REFMAX=Short.MAX_VALUE; //Normalizing value
-		double scaleFactor=SPEC_N*2*Math.PI;
+		double scaleFactor=2.0/Pxx[0].length;
 		//Break FFT averaging into SPEC_N segments for averaging
 		//Calculate spectrum, variation based on
 		//http://www.mathworks.com/support/tech-notes/1700/1702.html
@@ -117,21 +117,21 @@ public class SignalProcessing {
 			if(i*SPEC_N+SPEC_N > x.length)
 				break;
 			for (int k=0;k<SPEC_N;k++){
-				winData[k]= ((double)x[i*SPEC_N + k]/REFMAX)*SpectralWindows.hamming(k,SPEC_N);
+				winData[k]= ((double)x[i*SPEC_N + k])*SpectralWindows.hamming(k,SPEC_N);
 			}
 			tmpFFT=FFT.transform(winData,TransformType.FORWARD);
-			for(int k=0;k<(SPEC_N/2);k++){
-				tmpPxx = tmpFFT[k].abs();
-				tmpPxx=(tmpPxx*tmpPxx)/scaleFactor; //Not accurate for the DC & Nyquist, but we are not using it!
+			for(int k=0;k<Pxx[0].length;k++){
+				tmpPxx = tmpFFT[k].abs()*scaleFactor;
 				Pxx[1][k]=( (i*Pxx[1][k]) + tmpPxx )/((double) i+1); //averaging
 			}
 		}
-
-		//Convert to dB
+		
+		//Get frequency index and convert values to db SPL
 		for(int i=0;i<Pxx[0].length;i++){
 			Pxx[0][i]=SpectrumResolution*i;
-			Pxx[1][i]=10*Math.log10(Pxx[1][i]);
+			Pxx[1][i]=AcousticConverter.getFrequencyInputLevel(Pxx[1][i]);
 		}
+
 		return Pxx;
 	}
 

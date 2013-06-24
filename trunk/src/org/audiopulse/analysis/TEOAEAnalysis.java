@@ -32,9 +32,9 @@ class TEOAEAnalysis {
 		//some noise do deal with
 		//30 - Peaks are still distuinguishable but seems to begin to saturate
 		//35 - Peaks seem to be saturating
-		String filename="/home/ikaro/APData/TEOAE/L30.raw";
+		String filename="/home/ikaro/APData/TEOAE/N25.raw";
 		short[] rawData = ShortFile.readFile(filename);
-		//rawData=simulate(rawData,epochSize);
+		rawData=simulate(rawData,epochSize);
 		System.out.println(rawData.length + "  epochTime= " 
 				+ epochTime);
 		
