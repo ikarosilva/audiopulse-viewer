@@ -102,15 +102,12 @@ public class SignalProcessing {
 		int sweeps=Math.round(x.length/SPEC_N);
 		double[] winData=new double[SPEC_N];
 		Complex[] tmpFFT=new Complex[SPEC_N];
-		double[][] Pxx = new double[2][SPEC_N/2];
-		double tmpPxx;
+		double[][] Axx = new double[2][SPEC_N/2];
 		double SpectrumResolution = Fs/SPEC_N;
-		double scaleFactor=2.0/Pxx[0].length;
+		double scaleFactor=2.0/Axx[0].length;
 		//Break FFT averaging into SPEC_N segments for averaging
-		//Calculate spectrum, variation based on
-		//http://www.mathworks.com/support/tech-notes/1700/1702.html
 
-		//Perform windowing and running average on the power spectrum
+		//Perform windowing and running average on the Amplitude spectrum
 		//averaging is done by filling a buffer (windData) of size SPECN_N at offset i*SPEC_N
 		//until the end of the data.
 		for (int i=0; i < sweeps; i++){
@@ -120,19 +117,18 @@ public class SignalProcessing {
 				winData[k]= ((double)x[i*SPEC_N + k])*SpectralWindows.hamming(k,SPEC_N);
 			}
 			tmpFFT=FFT.transform(winData,TransformType.FORWARD);
-			for(int k=0;k<Pxx[0].length;k++){
-				tmpPxx = tmpFFT[k].abs()*scaleFactor;
-				Pxx[1][k]=( (i*Pxx[1][k]) + tmpPxx )/((double) i+1); //averaging
+			for(int k=0;k<Axx[0].length;k++){
+				Axx[1][k]=( (i*Axx[1][k]) + tmpFFT[k].abs()*scaleFactor )/((double) i+1); //averaging
 			}
 		}
 		
 		//Get frequency index and convert values to db SPL
-		for(int i=0;i<Pxx[0].length;i++){
-			Pxx[0][i]=SpectrumResolution*i;
-			Pxx[1][i]=AcousticConverter.getFrequencyInputLevel(Pxx[1][i]);
+		for(int i=0;i<Axx[0].length;i++){
+			Axx[0][i]=SpectrumResolution*i;
+			Axx[1][i]=AcousticConverter.getFrequencyInputLevel(Axx[1][i]);
 		}
 
-		return Pxx;
+		return Axx;
 	}
 
 	/*
