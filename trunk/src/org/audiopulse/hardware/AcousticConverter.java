@@ -4,10 +4,11 @@ import org.audiopulse.utilities.SignalProcessing;
 
 public class AcousticConverter {
 	//TODO: put this into a resource file
-	private static final double VPerDU_output = 1;		//V for 1 amplitude at outpu
+	private static final double ER10CGain=40;           //Gain setting for the ER10C in db
+	private static final double VPerDU_output = 1;		//V for 1 amplitude at output
 	private static final double VPerDU_input = 0.020;		//V for 1 amplitude at input
 	private static final double SPL1V = 72;				//dB SPL for 1V rms electrical signal
-	private static final double SPL1uV = 0;				//db SPL for 1uV rms micorphone electrical signal
+	private static final double SPL1uV = 0- ER10CGain;				//db SPL for 1uV rms microphone electrical signal
 	private static final double SQRT2=Math.sqrt(2.0);
 	
 	public AcousticConverter() {
@@ -63,7 +64,7 @@ public class AcousticConverter {
 		double a = getOutputLevel(x);
 		double gain = spl - a;
 		for (int n=0; n<x.length; n++) {
-			x[n] *= Math.pow(10, gain/20);
+			x[n] *= Math.pow(10, gain/20.0);
 		}
 		return x;
 	}
@@ -88,10 +89,10 @@ public class AcousticConverter {
 		return 20*Math.log10(rms*VPerDU_input*1e6) + SPL1uV;		//SPL = dBuV + SPL1uV
 	}
 	
-	public static double getFrequencyInputLevel(double Pxx) {
-		//Given a frequency magnitude Pxx, calculates the equivalent 
-		//dB SPL level
-		double rms=  Pxx*SQRT2;
+	public static double getFrequencyInputLevel(double Amp) {
+		//Given a frequency peak-to-peak amplitude, Amp, calculates the equivalent 
+		//dB SPL level given setup configuration
+		double rms=  Amp*SQRT2;
 		return 20*Math.log10(rms*VPerDU_input*1e6) + SPL1uV;		//SPL = dBuV + SPL1uV
 	}
 	
@@ -110,7 +111,7 @@ public class AcousticConverter {
 		int N = output.length;
 		double[] input = new double[N];
 		for (int n=0; n<N; n++) {
-			input[n] = output[n] * VPerDU_output / VPerDU_input * Math.pow(10, (SPL1V-(SPL1uV+120))/20);
+			input[n] = output[n] * VPerDU_output / VPerDU_input * Math.pow(10, (SPL1V-(SPL1uV+120))/20.0);
 		}
 		return input;
 	}

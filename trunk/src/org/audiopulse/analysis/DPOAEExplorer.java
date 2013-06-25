@@ -21,10 +21,12 @@ public class DPOAEExplorer {
 		short[] rawData = ShortFile.readFile(filename);	
 		double[] audioData=new double[rawData.length];
 		double f=1000;
+		double gain=Math.pow(10,0/20.0);
+		System.out.println(gain);
 		for(int n=0;n<rawData.length;n++){
-			audioData[n]=(double) rawData[n];
-			//audioData[n]=Math.sin(2*Math.PI*f*n/Fs);
-			//rawData[n]= (short) ( 0.05*Math.sin(2*Math.PI*f*n/Fs)*(Short.MAX_VALUE-1));
+			//audioData[n]=(double) rawData[n];
+			audioData[n]=Math.sin(2*Math.PI*f*n/Fs);
+			rawData[n]= (short) ( gain*Math.sin(2*Math.PI*f*n/Fs)*(Short.MAX_VALUE-1));
 		}
 		
 		PlotEpochsTEOAE mplot2= new PlotEpochsTEOAE("stim"
