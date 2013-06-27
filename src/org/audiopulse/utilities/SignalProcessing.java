@@ -118,7 +118,8 @@ public class SignalProcessing {
 			}
 			tmpFFT=FFT.transform(winData,TransformType.FORWARD);
 			for(int k=0;k<Axx[0].length;k++){
-				Axx[1][k]=( (i*Axx[1][k]) + tmpFFT[k].abs()*scaleFactor )/((double) i+1); //averaging
+				Axx[1][k]=( (i*Axx[1][k]) + tmpFFT[k].abs()*scaleFactor )/
+						((double) i+1.0); //averaging
 			}
 		}
 		
