@@ -88,6 +88,21 @@ public class PlotEpochsTEOAE extends ApplicationFrame {
 	}
 
 
+	public PlotEpochsTEOAE(String title, short[] stimData, List<Integer> peakInd,
+			int Fs) {
+		super(title);
+		double[] audioData=new double[stimData.length];
+		for(int n=0;n<stimData.length;n++)
+			audioData[n]=(double) stimData[n];
+		JPanel chartPanel = createDemoPanel(audioData,peakInd,Fs);
+		chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+		setContentPane(chartPanel);
+		this.pack();
+		RefineryUtilities.centerFrameOnScreen(this);
+		this.setVisible(true);
+	}
+
+
 	private static JFreeChart createChart(XYDataset dataset) {
 		// create the chart...
 		JFreeChart chart = ChartFactory.createXYLineChart(
