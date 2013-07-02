@@ -1,9 +1,15 @@
 package org.audiopulse.analysis;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
+import org.audiopulse.hardware.AcousticConverter;
 import org.audiopulse.io.ShortFile;
 import org.audiopulse.ui.SpectralPlotFrame;
+import org.audiopulse.utilities.SignalProcessing;
 import org.jfree.ui.RefineryUtilities;
 
 //Toy class to help explore and debug the DPOAE analysis 
@@ -15,48 +21,55 @@ public class DPOAEExplorer {
 	 * @throws IOException 
 	 * @throws ClassNotFoundException 
 	 */
+	public static File[] finder( String dirName){
+		File dir = new File(dirName);
+		return dir.listFiles(new FilenameFilter() {
+			public boolean accept(File dir, String filename)
+			{ return filename.endsWith(".raw"); }
+		} );
+
+	}
+
 	public static void main(String[] args) throws ClassNotFoundException, IOException {
 		int Fs=16000, M=512;
-		String filename="/home/ikaro/APData/sweep4k/"+
-		"AP_0.0-DPOAE-LE-4kHz-Wed-Jun-26-22-43-45-EDT-2013.raw";
-		String filename2="/home/ikaro/APData/sweep4k/"+
-		"AP_0.0-DPOAE-Stim-LE-4kHz-Wed-Jun-26-22-43-45-EDT-2013.raw";
-		String filename3="/home/ikaro/APData/sweep4k/"+
-				"AP_40.0-DPOAE-Stim-LE-4kHz-Wed-Jun-26-22-43-52-EDT-2013.raw";
-		
-		short[] rawData = ShortFile.readFile(filename);		
-		PlotEpochsTEOAE mplot2= new PlotEpochsTEOAE("raw data"
-				,rawData,null,Fs);
+		String data_dir="/home/ikaro/APData/sweep3k";
 
-		double[][]Pxx=DPOAEAnalysis.getSpectrum(rawData,Fs,M);
-		double Fres=(int) 2*M/Fs;
-		SpectralPlotFrame demo = new SpectralPlotFrame("spec",Pxx,Fres,"Test");
-		demo.pack();
-		RefineryUtilities.centerFrameOnScreen(demo);
-		demo.setVisible(true);
-		
-		short[] stimData = ShortFile.readFile(filename2);	
-		short[] data=new short[stimData.length/2];
-		double sum=0;
-		for(int n=0;n<data.length;n++){
-			data[n]=stimData[n*2];
-			sum+=Math.abs(data[n]);
+		File[] audioFiles=finder(data_dir);
+		Arrays.sort(audioFiles);
+		short[] rawData;
+		ArrayList<Double> rms= new ArrayList<Double>();
+		double tmp=0;
+		for(int i=0;i<audioFiles.length;i++){              
+			if(audioFiles[i].toString().contains("Stim")){
+				rawData=ShortFile.readFile(audioFiles[i].getAbsolutePath());
+				rawData=Arrays.copyOfRange(rawData,Fs,rawData.length);
+				
+				/*
+				 * 	double amp= (double) SignalProcessing.max(rawData);
+				for(int k=0;k<rawData.length;k++)
+					rawData[k]=(short) ((short) Math.sin(
+							Math.PI*2*1000*k/((double) Fs)
+							)*amp);
+				 */
+				if(audioFiles[i].toString().contains("Stim")){
+					tmp=AcousticConverter.getInputLevel(rawData);
+				}else{
+					tmp=AcousticConverter.getOutputLevel(rawData);
+				}
+				rms.add(tmp);
+				System.out.println( audioFiles[i] +" spl= " + tmp);
+				PlotEpochsTEOAE mplot4= new PlotEpochsTEOAE("stimulus"
+						,rawData,null,Fs);
+			}
 		}
-		PlotEpochsTEOAE mplot3= new PlotEpochsTEOAE("stimulus"
-				,data,null,Fs);
-		
-		short[] stimData2 = ShortFile.readFile(filename3);	
-		short[] data2=new short[stimData2.length/2];
-		double sum2=0;
-		for(int n=0;n<data2.length;n++){
-			data2[n]=stimData2[n*2];
-			sum2+=Math.abs(data2[n]);
-		}
+		double[] data=new double[rms.size()];
+		for(int i=0;i<rms.size();i++)
+			data[i]=(double) rms.get(i);
+
 		PlotEpochsTEOAE mplot4= new PlotEpochsTEOAE("stimulus"
-				,data2,null,Fs);
-		
-		System.out.println("sum= " + sum + " sum2= " + sum2);
+				,data,null,1);
+
 	}
-	
+
 
 }

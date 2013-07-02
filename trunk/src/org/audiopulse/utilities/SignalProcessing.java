@@ -9,18 +9,14 @@ import org.audiopulse.hardware.AcousticConverter;
 
 public class SignalProcessing {
 
-	@Deprecated // function name should indicate that it does not actually calculate linearly scaled rms. Perhaps name it dBfs? 
 	public static double rms(short[] x){
-		double y=0;
-		double rms;
+		double r = 0;
+		double N = (double) x.length;
 		//Calculate mean squared
 		for(int i=0;i<x.length;i++){
-			y= (i*y + (x[i]*x[i]))/(i+1);
+			r += (x[i]*x[i]);
 		}
-		//Return RMS in decibels wrt to 1 gain
-		//And Round RMS value to nearest 
-		rms=20*Math.log10(Math.sqrt(y)/Short.MAX_VALUE);
-		return Math.round(rms*10)/10;
+		return Math.sqrt(r/N);
 	}
 
 	public static double rms(double[] x) {
@@ -39,7 +35,7 @@ public class SignalProcessing {
 		//are the same value. We are essentially checking if the signal 
 		//has any "flat-regions" of any sort (the playback can be clipped 
 		//while the recording can still be ok).
-		
+
 		double winSize=0.01; //window size in milliseconds
 		int window=(int) Math.round(Fs*winSize);
 		double sum=0;
@@ -65,6 +61,20 @@ public class SignalProcessing {
 		}
 		return clipped;
 	}		
+
+	public static double max(double[] x){
+		double max=Double.MIN_VALUE;
+		for(double z: x)
+			max=(z>max) ? z:max;
+		return max;
+	}
+	
+	public static short max(short[] x){
+		short max=Short.MIN_VALUE;
+		for(short z: x)
+			max=(z>max) ? z:max;
+		return max;
+	}
 	
 	@Deprecated 	// as written, this is linear scaling in power (not rms) to dB (not dBu)
 	public static double rms2dBU(double x){
@@ -90,7 +100,7 @@ public class SignalProcessing {
 			y[i]=(double) x[i]/(Short.MAX_VALUE+1);
 		}	
 		return getSpectrum(y,Fs,SPEC_N);
-		
+
 	}
 	public static double[][] getSpectrum(double[] x, double Fs, int SPEC_N){
 		FastFourierTransformer FFT = new 
@@ -122,7 +132,7 @@ public class SignalProcessing {
 						((double) i+1.0); //averaging
 			}
 		}
-		
+
 		//Get frequency index and convert values to db SPL
 		for(int i=0;i<Axx[0].length;i++){
 			Axx[0][i]=SpectrumResolution*i;
