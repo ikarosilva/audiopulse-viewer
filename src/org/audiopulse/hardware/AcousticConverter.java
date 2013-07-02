@@ -1,5 +1,7 @@
 package org.audiopulse.hardware;
 
+import org.audiopulse.utilities.SignalProcessing;
+
 
 public class AcousticConverter {
 	//TODO: put this into a resource file
@@ -55,14 +57,16 @@ public class AcousticConverter {
 	static public double getOutputLevel(double[] x, int fromSample, int toSample) {
 		//compute sum of squares
 		double r = 0;
-		int N = toSample-fromSample;
+		int N = toSample-fromSample+1;
 		for (int n=fromSample; n<=toSample; n++) {
 			r+=x[n]*x[n];
 		}
 		if (r==0)								//avoid log(0), return min value instead
 			return Double.MIN_VALUE;
-		r /= ((double) N);										//convert to mean-squared
-		r *= (VPerDU_output*VPerDU_output);			//convert mean-squared value to volts^2
+		r = r/((double) N);	//convert to mean-squared
+		//Normalize by sine 1 peak-to-peak sine wave mean square 
+		r=r*2;
+		r *= (VPerDU_output*VPerDU_output);			//convert mean-squared value to volts^2	
 		return 10*Math.log10(r) + SPL1V;			//convert to dB SPL
 	}
 	
@@ -83,13 +87,15 @@ public class AcousticConverter {
 	static public double getInputLevel(double[] x, int fromSample, int toSample) {
 		//compute sum of squares
 		double r = 0;
-		int N = toSample-fromSample;
+		int N = toSample-fromSample+1;
 		for (int n=fromSample; n<=toSample; n++) {
 			r+=x[n]*x[n];
 		}
 		if (r==0)								//avoid log(0), return min value instead
 			return Double.MIN_VALUE;
 		r = Math.sqrt(r/((double)N));		//convert to rms DU
+		//Normalize wrt peak to peak sine wave rms
+		r=r/SQRT2;
 		return getInputLevel(r);
 	}
 	public static double getInputLevel(double rms) {
@@ -126,8 +132,7 @@ public class AcousticConverter {
 	public static double getOutputLevel(short[] rawData) {
 		double[] data=new double[rawData.length];
 		for(int i=0;i<rawData.length;i++)
-			data[i]=(double) rawData[i]/((double) Short.MAX_VALUE);
-			
+			data[i]=(double) rawData[i]/Short.MAX_VALUE;
 		return getOutputLevel(data);
 	}
 }
