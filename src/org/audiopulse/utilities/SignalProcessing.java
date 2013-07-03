@@ -97,11 +97,12 @@ public class SignalProcessing {
 	public static double[][] getSpectrum(short [] x, double Fs, int SPEC_N){
 		double[] y= new double[x.length];
 		for(int i=0;i<x.length;i++){
-			y[i]=(double) x[i]/(Short.MAX_VALUE+1);
+			y[i]=(double) x[i]/((double) Short.MAX_VALUE);
 		}	
 		return getSpectrum(y,Fs,SPEC_N);
 
 	}
+	
 	public static double[][] getSpectrum(double[] x, double Fs, int SPEC_N){
 		FastFourierTransformer FFT = new 
 				FastFourierTransformer(DftNormalization.STANDARD);
@@ -114,7 +115,7 @@ public class SignalProcessing {
 		Complex[] tmpFFT=new Complex[SPEC_N];
 		double[][] Axx = new double[2][SPEC_N/2];
 		double SpectrumResolution = Fs/SPEC_N;
-		double scaleFactor=2.0/Axx[0].length;
+		double scaleFactor=2.0/((double) Axx[0].length);
 		//Break FFT averaging into SPEC_N segments for averaging
 
 		//Perform windowing and running average on the Amplitude spectrum
