@@ -38,7 +38,7 @@ public class DPOAEExplorer {
 		File[] audioFiles=finder(data_dir);
 		Arrays.sort(audioFiles);
 		short[] rawData, right;
-		double[] left;
+		short[] left;
 		double[] mix;
 		ArrayList<Double> rms= new ArrayList<Double>();
 		double tmp=0;
@@ -46,7 +46,7 @@ public class DPOAEExplorer {
 			if(audioFiles[i].toString().contains("Stim")){
 				rawData=ShortFile.readFile(audioFiles[i].getAbsolutePath());
 				rawData=Arrays.copyOfRange(rawData,Fs,rawData.length);
-				left=new double[rawData.length/2];
+				left=new short[rawData.length/2];
 				right=new short[rawData.length/2];
 				mix=new double[rawData.length/2];
 				for(int n=0;n< rawData.length/2;n++){
@@ -62,15 +62,20 @@ public class DPOAEExplorer {
 				}
 
 			
-				double amp= Short.MAX_VALUE-1;//(double) SignalProcessing.max(left);
+				double amp= (double) SignalProcessing.max(left);
+
+				/*
 				for(int k=0;k<left.length;k++)
-					left[k]=(Math.sin(Math.PI*2*2500*k/((double) Fs))*amp);
+					left[k]= (short) (Math.cos(Math.PI*2*249*k/((double) Fs))*amp);
+				tmp=AcousticConverter.getInputLevel(left);
+				*/
 				
 				if(!audioFiles[i].toString().contains("Stim")){
-					tmp=AcousticConverter.getInputLevel(rawData);
+					tmp=AcousticConverter.getInputLevel(left);
 				}else{
-					tmp=AcousticConverter.getOutputLevel(rawData);
+					tmp=AcousticConverter.getOutputLevel(left);
 				}
+				
 				rms.add(tmp);
 				System.out.println( audioFiles[i] +" spl= " + tmp);
 				PlotEpochsTEOAE mplot4= new PlotEpochsTEOAE("stimulus"

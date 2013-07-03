@@ -4,6 +4,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
+import org.audiopulse.analysis.PlotEpochsTEOAE;
 import org.audiopulse.hardware.AcousticConverter;
 
 
@@ -115,23 +116,25 @@ public class SignalProcessing {
 		Complex[] tmpFFT=new Complex[SPEC_N];
 		double[][] Axx = new double[2][SPEC_N/2];
 		double SpectrumResolution = Fs/SPEC_N;
-		double scaleFactor=2.0/((double) Axx[0].length);
+		double scaleFactor=1.0/((double) Axx[0].length);
 		//Break FFT averaging into SPEC_N segments for averaging
 
 		//Perform windowing and running average on the Amplitude spectrum
 		//averaging is done by filling a buffer (windData) of size SPECN_N at offset i*SPEC_N
 		//until the end of the data.
 		for (int i=0; i < sweeps; i++){
-			if(i*SPEC_N+SPEC_N > x.length)
+			if(( i*SPEC_N+SPEC_N ) > x.length)
 				break;
 			for (int k=0;k<SPEC_N;k++){
-				winData[k]= ((double)x[i*SPEC_N + k])*SpectralWindows.hamming(k,SPEC_N);
+				winData[k]= x[i*SPEC_N + k]*SpectralWindows.hanning(k,SPEC_N);
 			}
+	
 			tmpFFT=FFT.transform(winData,TransformType.FORWARD);
 			for(int k=0;k<Axx[0].length;k++){
 				Axx[1][k]=( (i*Axx[1][k]) + tmpFFT[k].abs()*scaleFactor )/
 						((double) i+1.0); //averaging
 			}
+	
 		}
 
 		//Get frequency index and convert values to db SPL

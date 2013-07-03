@@ -12,12 +12,13 @@ public class AcousticConverter {
 	private static final double SPL1uV = 0-ER10CGain;	//dB SPL for 1uV rms microphone electrical signal
 	private static final double SQRT2=Math.sqrt(2.0);
 	private static final String TAG="AcousticConverter";
-	
+	private static final double MAX_SPL=20*Math.log10(VPerDU_input*1e6); 
+
 	public AcousticConverter() {
 		//TODO: determine that mic & headphone jack are connected to something
-		
+
 	}
-	
+
 	//Convert energy value(s) for output (in DU) to expected SPL
 	static public double convertOutputToSPL(double x) {
 		return 20*Math.log10(x * VPerDU_output) + SPL1V;
@@ -29,7 +30,7 @@ public class AcousticConverter {
 		}
 		return spl;
 	}
-	
+
 	//Convert energy value(s) from input (in DU) to SPL
 	static public double convertInputToSPL(double x) {
 		return 20*Math.log10(x * VPerDU_input*1e6) + SPL1uV;
@@ -41,15 +42,15 @@ public class AcousticConverter {
 		}
 		return spl;
 	}
-	
+
 	static public double getInputLevel(short[] x) {
 		double[] audio = new double[x.length];
 		for(int i=0;i<x.length;i++)
 			audio[i]= x[i]/((double)(Short.MAX_VALUE)) ;
-			
+
 		return getInputLevel(audio); 
 	}
-		
+
 	// get total signal energy output level in dB SPL
 	static public double getOutputLevel(double[] x) {
 		return getOutputLevel(x,0,x.length-1);
@@ -69,7 +70,7 @@ public class AcousticConverter {
 		r *= (VPerDU_output*VPerDU_output);			//convert mean-squared value to volts^2	
 		return 10*Math.log10(r) + SPL1V;			//convert to dB SPL
 	}
-	
+
 	//set output signal level in dB SPL
 	static public double[] setOutputLevel(double[] x, double spl) {
 		double a = getOutputLevel(x);
@@ -79,7 +80,7 @@ public class AcousticConverter {
 		}
 		return x;
 	}
-	
+
 	//compute input signal level in dB SPL
 	static public double getInputLevel(double[] x) {
 		return getInputLevel(x,0,x.length-1);
@@ -98,26 +99,31 @@ public class AcousticConverter {
 	}
 	public static double getInputLevel(double rms) {
 		//Normalize wrt peak to peak sine wave rms
-		rms=rms/SQRT2;
-		return 20*Math.log10(rms*VPerDU_input*1e6) + SPL1uV;		//SPL = dBuV + SPL1uV
+		double out=SPL1uV;
+		if(rms !=0)
+			out=20*Math.log10(rms*SQRT2) + MAX_SPL;
+		return 	out;//SPL = dBuV + SPL1uV
 	}
-		
+
 	public static double getFrequencyInputLevel(double Amp) {
 		//Given a frequency peak-to-peak amplitude, Amp, calculates the equivalent 
 		//dB SPL level given setup configuration
-		return 20*Math.log10(Amp*VPerDU_input*1e6) + SPL1uV;		//SPL = dBuV + SPL1uV
+		double out=SPL1uV;
+		if(Amp !=0)
+			out=20*Math.log10(Amp) + MAX_SPL;
+		return 	out;//SPL = dBuV + SPL1uV
 	}
-	
+
 	//return dB offset: dB SPL = 10*log10(A^2) + dBOffset
 	static public double getDBOffset_output() {
-		return 10*Math.log10(VPerDU_output) + SPL1V;
+		return 20*Math.log10(VPerDU_output) + SPL1V;
 	}
 	//return dB offset: dB SPL = 10*log10(A^2) + dBOffset
 	static public double getDBOffset_input() {
-		return 10*Math.log10(VPerDU_input*1e6) + SPL1uV;
+		return 20*Math.log10(VPerDU_input*1e6) + SPL1uV;
 	}
-	
-	
+
+
 	//convert output vector to expect input vector for flat, 1 acoustic response 
 	static public double[] outputToInput(double[] output) {
 		int N = output.length;
