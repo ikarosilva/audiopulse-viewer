@@ -44,7 +44,20 @@ public class SpectralWindows {
 	public static double hamming(int n, int N){
 		// assert that the absolute value is >= 0
 		assert ( n <= N ) : "Window sample: " + n + " is beyond expected window range: "+ N;
-		double out=0.54 - 0.46*Math.cos(2*Math.PI*n/((double) (N-1) ));
-		return out;	
+		double out=(0.54 - 0.46*Math.cos(2*Math.PI*n/((double) (N-1) )));
+		return 2*out;	//2 factor so that amplitude matches for pure sine wave as well
+	}
+	
+	public static double hanning(int n, int N){
+		// assert that the absolute value is >= 0
+		assert ( n <= N ) : "Window sample: " + n + " is beyond expected window range: "+ N;
+		double out=0.5 - 0.5*Math.cos(2*Math.PI*n/((double) (N-1) ));
+		return 2*out;	//2 factor so that amplitude matches for pure sine wave as well
+	}
+	
+	public static double rect(int n, int N){
+		// assert that the absolute value is >= 0
+		assert ( n <= N ) : "Window sample: " + n + " is beyond expected window range: "+ N;
+		return 1;	
 	}
 }
