@@ -43,7 +43,7 @@ public class DPOAEExplorer {
 		ArrayList<Double> rms= new ArrayList<Double>();
 		double tmp=0;
 		for(int i=0;i<audioFiles.length;i++){              
-			if(audioFiles[i].toString().contains("Stim")){
+			if(!audioFiles[i].toString().contains("Stim")){
 				rawData=ShortFile.readFile(audioFiles[i].getAbsolutePath());
 				rawData=Arrays.copyOfRange(rawData,Fs,rawData.length);
 				left=new short[rawData.length/2];
@@ -62,19 +62,20 @@ public class DPOAEExplorer {
 				}
 
 			
-				double amp= (double) SignalProcessing.max(left);
+				double amp= (double) Short.MAX_VALUE/100;//SignalProcessing.max(left);
 
-				/*
-				for(int k=0;k<left.length;k++)
-					left[k]= (short) (Math.cos(Math.PI*2*249*k/((double) Fs))*amp);
-				tmp=AcousticConverter.getInputLevel(left);
-				*/
 				
+				for(int k=0;k<left.length;k++)
+					left[k]= (short) (Math.cos(Math.PI*2*1000*k/((double) Fs))*amp);
+				tmp=AcousticConverter.getInputLevel(left);
+				
+				/*
 				if(!audioFiles[i].toString().contains("Stim")){
 					tmp=AcousticConverter.getInputLevel(left);
 				}else{
 					tmp=AcousticConverter.getOutputLevel(left);
 				}
+				*/
 				
 				rms.add(tmp);
 				System.out.println( audioFiles[i] +" spl= " + tmp);

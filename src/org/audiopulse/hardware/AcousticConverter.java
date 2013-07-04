@@ -12,7 +12,7 @@ public class AcousticConverter {
 	private static final double SPL1uV = 0-ER10CGain;	//dB SPL for 1uV rms microphone electrical signal
 	private static final double SQRT2=Math.sqrt(2.0);
 	private static final String TAG="AcousticConverter";
-	private static final double MAX_SPL=20*Math.log10(VPerDU_input*1e6); 
+	private static final double MAX_MIC_SPL=20*Math.log10(VPerDU_input*1e6);  //Maximum SPL level picked by the mic
 
 	public AcousticConverter() {
 		//TODO: determine that mic & headphone jack are connected to something
@@ -92,25 +92,23 @@ public class AcousticConverter {
 		for (int n=fromSample; n<=toSample; n++) {
 			r+=x[n]*x[n];
 		}
-		if (r==0)								//avoid log(0), return min value instead
-			return Double.MIN_VALUE;
 		r = Math.sqrt(r/((double)N));		//convert to rms DU
 		return getInputLevel(r);
 	}
 	public static double getInputLevel(double rms) {
 		//Normalize wrt peak to peak sine wave rms
-		double out=SPL1uV;
+		double out=Double.NEGATIVE_INFINITY; //Avoid log(0)
 		if(rms !=0)
-			out=20*Math.log10(rms*SQRT2) + MAX_SPL;
+			out=20*Math.log10(rms*SQRT2) + MAX_MIC_SPL;
 		return 	out;//SPL = dBuV + SPL1uV
 	}
 
 	public static double getFrequencyInputLevel(double Amp) {
 		//Given a frequency peak-to-peak amplitude, Amp, calculates the equivalent 
 		//dB SPL level given setup configuration
-		double out=SPL1uV;
+		double out=Double.NEGATIVE_INFINITY;//Avoid log(0)
 		if(Amp !=0)
-			out=20*Math.log10(Amp) + MAX_SPL;
+			out=20*Math.log10(Amp) + MAX_MIC_SPL;
 		return 	out;//SPL = dBuV + SPL1uV
 	}
 
