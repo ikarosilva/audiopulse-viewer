@@ -12,17 +12,19 @@ public class AcousticConverter {
 	private static final double SPL1uV = 0-ER10CGain;	//dB SPL for 1uV rms microphone electrical signal
 	private static final double SQRT2=Math.sqrt(2.0);
 	private static final String TAG="AcousticConverter";
-	private static final double MAX_MIC_SPL=20*Math.log10(VPerDU_input*1e6);  //Maximum SPL level picked by the mic
-
+	private static final double MAX_MIC_SPL=20*Math.log10(VPerDU_input*1e6);  //Max SPL recorded by the mic
+	private static final double MAX_SPEAKER_SPL=SPL1V;  //Max SPL played by the phone	
 	public AcousticConverter() {
 		//TODO: determine that mic & headphone jack are connected to something
 
 	}
 
 	//Convert energy value(s) for output (in DU) to expected SPL
-	static public double convertOutputToSPL(double x) {
-		return 20*Math.log10(x * VPerDU_output) + SPL1V;
+	static public double convertOutputToSPL(double rms) {
+		return 20*Math.log10(rms*SQRT2) + MAX_SPEAKER_SPL;
 	}
+	
+	@Deprecated //use getOutputLevel
 	static public double[] convertOutputToSPL(double[] x) {
 		double[] spl = new double[x.length];
 		for (int ii=0; ii<x.length;ii++) {
@@ -32,8 +34,9 @@ public class AcousticConverter {
 	}
 
 	//Convert energy value(s) from input (in DU) to SPL
+	@Deprecated //use getInputLevel instead
 	static public double convertInputToSPL(double x) {
-		return 20*Math.log10(x * VPerDU_input*1e6) + SPL1uV;
+		return getInputLevel(x);
 	}
 	static public double[] convertInputToSPL(double[] x) {
 		double[] spl = new double[x.length];
@@ -57,18 +60,16 @@ public class AcousticConverter {
 	}
 	static public double getOutputLevel(double[] x, int fromSample, int toSample) {
 		//compute sum of squares
-		double r = 0;
+		double rms = 0;
 		int N = toSample-fromSample+1;
 		for (int n=fromSample; n<=toSample; n++) {
-			r+=x[n]*x[n];
+			rms +=x[n]*x[n];
 		}
-		if (r==0)								//avoid log(0), return min value instead
-			return Double.MIN_VALUE;
-		r = r/((double) N);	//convert to mean-squared
-		//Normalize by sine 1 peak-to-peak sine wave mean square 
-		r=r*2;
-		r *= (VPerDU_output*VPerDU_output);			//convert mean-squared value to volts^2	
-		return 10*Math.log10(r) + SPL1V;			//convert to dB SPL
+		rms  = Math.sqrt(rms /((double) N) );	//convert to RMS
+		if (rms ==0)							//avoid log(0), return min value instead
+			return Double.NEGATIVE_INFINITY;
+		
+		return 20*Math.log10(rms*SQRT2) + MAX_SPEAKER_SPL;
 	}
 
 	//set output signal level in dB SPL
