@@ -33,68 +33,35 @@ public class DPOAEExplorer {
 
 	public static void main(String[] args) throws ClassNotFoundException, IOException {
 		int Fs=16000, M=512;
-		String data_dir="/home/ikaro/APData/sweep";
+		String data_dir="/home/ikaro/APData/sweep10db";
 
 		File[] audioFiles=finder(data_dir);
 		Arrays.sort(audioFiles);
-		short[] rawData, right;
-		short[] left;
-		double[] mix;
+		short[] rawData;
 		ArrayList<Double> rms= new ArrayList<Double>();
-		double tmp=0;
+		double f2=2000;
+		double f1=f2/1.2;
+		double desF=f2;//2*f1-f2;
+		
 		for(int i=0;i<audioFiles.length;i++){              
-			if(!audioFiles[i].toString().contains("Stim")){
+
+			if(audioFiles[i].getName().contains("2kHz")){
 				rawData=ShortFile.readFile(audioFiles[i].getAbsolutePath());
 				rawData=Arrays.copyOfRange(rawData,Fs,rawData.length);
-				left=new short[rawData.length/2];
-				right=new short[rawData.length/2];
-				mix=new double[rawData.length/2];
-				for(int n=0;n< rawData.length/2;n++){
-					if(audioFiles[i].toString().contains("Stim")){
-						left[n]=rawData[2*n];
-						right[n]=rawData[2*n+1];
-						mix[n]=left[n]+right[n];
-					}else{
-						left[n]=rawData[n];
-						right[n]=rawData[n];
-						mix[n]=left[n];
-					}
-				}
+				SpectralPlotFrame demo = new SpectralPlotFrame(audioFiles[i].getName(),rawData,Fs,M);
 
-			
-				double amp= (double) Short.MAX_VALUE/100;//SignalProcessing.max(left);
-
-				
-				for(int k=0;k<left.length;k++)
-					left[k]= (short) (Math.cos(Math.PI*2*1000*k/((double) Fs))*amp);
-				tmp=AcousticConverter.getInputLevel(left);
-				
-				/*
-				if(!audioFiles[i].toString().contains("Stim")){
-					tmp=AcousticConverter.getInputLevel(left);
-				}else{
-					tmp=AcousticConverter.getOutputLevel(left);
-				}
-				*/
-				
-				rms.add(tmp);
-				System.out.println( audioFiles[i] +" spl= " + tmp);
-				PlotEpochsTEOAE mplot4= new PlotEpochsTEOAE("stimulus"
-						,left,null,Fs);
-
-				//SpectralPlotFrame demo = new SpectralPlotFrame("rigth",right,Fs,M);
-				SpectralPlotFrame demo2 = new SpectralPlotFrame("left",left,Fs,M);
-				//SpectralPlotFrame demo3 = new SpectralPlotFrame("mix",mix,Fs,M);
-
-				break;
+				System.out.println("desF= " +desF);
+				double[] resp= DPOAEAnalysis.getResponse(demo.getSpectrum(),desF,50);
+				rms.add(resp[1]);
+				System.out.println( audioFiles[i] +" spl= " + resp[1]);
 			}
 		}
 		double[] data=new double[rms.size()];
-		for(int i=0;i<rms.size();i++)
-			data[i]=(double) rms.get(i);
+		for(int j=0;j<rms.size();j++)
+			data[j]=(double) rms.get(j);
 
-		//PlotEpochsTEOAE mplot4= new PlotEpochsTEOAE("stimulus"
-		//		,data,null,1);
+		PlotEpochsTEOAE mplot4= new PlotEpochsTEOAE("stimulus"
+				,data,null,1);
 
 	}
 
