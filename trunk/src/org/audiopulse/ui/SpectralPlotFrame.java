@@ -17,6 +17,7 @@ import org.jfree.ui.RefineryUtilities;
 public class SpectralPlotFrame extends ApplicationFrame implements ChartRenderer{
 
 	private SpectralPlot plot;
+	private double[][] XFFT;
 	
 	public SpectralPlotFrame(String title,double[][] XFFT,double Fres) {
 		super(title);
@@ -29,9 +30,18 @@ public class SpectralPlotFrame extends ApplicationFrame implements ChartRenderer
 		this.setVisible(true);
 	}
 	
+	public double[][] getSpectrum(){
+		return XFFT;
+	}
+	
+	public double[][] getResponse(){
+		return XFFT;
+	}
+	
 	public SpectralPlotFrame(String title,short[] x,double Fs, int M) {
 		super(title);
 		double[][]XFFT=DPOAEAnalysis.getSpectrum(x,Fs,M);
+		this.XFFT=XFFT;
         double Fres=(int) 2*M/Fs;
 		plot = SpectralPlot.fromData(title, XFFT, Fres);
 		JPanel chartPanel = new ChartPanel(render());
