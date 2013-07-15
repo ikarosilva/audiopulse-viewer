@@ -112,13 +112,28 @@ public class SignalProcessing {
 
 		//Calculate the number of sweeps given the epoch time
 		int sweeps=Math.round(x.length/SPEC_N);
+		double[] weight=new double[sweeps];
+		double weightSum=0;
 		double[] winData=new double[SPEC_N];
 		Complex[] tmpFFT=new Complex[SPEC_N];
 		double[][] Axx = new double[2][SPEC_N/2];
 		double SpectrumResolution = Fs/SPEC_N;
 		double scaleFactor=1.0/((double) Axx[0].length);
 		//Break FFT averaging into SPEC_N segments for averaging
-
+		
+		//Calcute weights on each trial based on variance
+		for (int i=0; i < sweeps; i++){
+			if(( i*SPEC_N+SPEC_N ) > x.length)
+				break;
+			for (int k=0;k<SPEC_N;k++){
+				weight[i]= 1.0/((double) (x[i*SPEC_N + k]*x[i*SPEC_N + k]));
+			}
+			weightSum+=weight[i];
+		}
+		//Normalize the weights
+		for(int i=0;i<sweeps;i++)
+			weight[i]/=weightSum;
+		
 		//Perform windowing and running average on the Amplitude spectrum
 		//averaging is done by filling a buffer (windData) of size SPECN_N at offset i*SPEC_N
 		//until the end of the data.
@@ -131,7 +146,7 @@ public class SignalProcessing {
 	
 			tmpFFT=FFT.transform(winData,TransformType.FORWARD);
 			for(int k=0;k<Axx[0].length;k++){
-				Axx[1][k]=( (i*Axx[1][k]) + tmpFFT[k].abs()*scaleFactor )/
+				Axx[1][k]=( (i*Axx[1][k]) + weight[i]*tmpFFT[k].abs()*scaleFactor )/
 						((double) i+1.0); //averaging
 			}
 	
