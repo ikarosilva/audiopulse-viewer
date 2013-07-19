@@ -78,10 +78,11 @@ public class DPOAEExplorer {
 			PlotEpochsTEOAE mplot4= new PlotEpochsTEOAE("stimulus"
 					,data,null,1);
 			*/
-			System.out.println("b= " + regression.getIntercept() +
-							 " m= " + regression.getSlope() + " s= " + s);
 			mopt[s]=regression.getIntercept();
 			bopt[s]=regression.getSlope();
+			
+			System.out.println(sbj[s] + "  " + mopt[s] +", " + bopt[s]);
+
 		}
 		
 		//Print descriminationa values values
