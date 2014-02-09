@@ -5,7 +5,7 @@ import org.audiopulse.utilities.SignalProcessing;
 
 public class AcousticConverter {
 	//TODO: put this into a resource file
-	private static final double ER10CGain=40.0;			//Gain setting for the ER10C in dB
+	private static final double ER10CGain=0.0;			//Gain setting for the ER10C in dB
 	private static final double VPerDU_output = 1.0;	//V for 1 amplitude at output
 	private static final double VPerDU_input = 0.020;	//V for 1 amplitude at input
 	private static final double SPL1V = 72.0;			//dB SPL for 1V rms electrical signal
@@ -15,6 +15,7 @@ public class AcousticConverter {
 	private static final double MAX_MIC_SPL=20*Math.log10(VPerDU_input*1e6)
 												- ER10CGain;  //Max SPL recorded by the mic
 	private static final double MAX_SPEAKER_SPL=SPL1V;  //Max SPL played by the phone	
+	public static final double MAX_MIC_BITRANGE=Math.pow(2,15); //Some phones record at 10 bit resolution
 	public AcousticConverter() {
 		//TODO: determine that mic & headphone jack are connected to something
 
@@ -50,11 +51,21 @@ public class AcousticConverter {
 	static public double getInputLevel(short[] x) {
 		double[] audio = new double[x.length];
 		for(int i=0;i<x.length;i++)
-			audio[i]= x[i]/((double)(Short.MAX_VALUE)) ;
-
+			audio[i]= x[i]/MAX_MIC_BITRANGE;
 		return getInputLevel(audio); 
 	}
 
+	static public double[] getInputDU(short[] x) {
+		double[] audio = new double[x.length];
+		for(int i=0;i<x.length;i++)
+			audio[i]= x[i]/MAX_MIC_BITRANGE;
+		//System.out.println("max is =" +  SignalProcessing.max(audio));
+		//System.out.println("max is =" +  SignalProcessing.max(x));
+		System.out.println("rms is =" +  SignalProcessing.rms(audio));
+		//System.out.println("rms is =" +  SignalProcessing.rms(x));
+		return audio; 
+	}
+	
 	// get total signal energy output level in dB SPL
 	static public double getOutputLevel(double[] x) {
 		return getOutputLevel(x,0,x.length-1);

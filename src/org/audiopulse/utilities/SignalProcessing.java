@@ -96,10 +96,8 @@ public class SignalProcessing {
 	}
 
 	public static double[][] getSpectrum(short [] x, double Fs, int SPEC_N){
-		double[] y= new double[x.length];
-		for(int i=0;i<x.length;i++){
-			y[i]=(double) x[i]/((double) Short.MAX_VALUE);
-		}	
+		
+		double[] y= AcousticConverter.getInputDU(x);
 		return getSpectrum(y,Fs,SPEC_N);
 
 	}
@@ -113,6 +111,7 @@ public class SignalProcessing {
 		//Calculate the number of sweeps given the epoch time
 		int sweeps=Math.round(x.length/SPEC_N);
 		double[] weight=new double[sweeps];
+		double pow=0;
 		double weightSum=0;
 		double[] winData=new double[SPEC_N];
 		Complex[] tmpFFT=new Complex[SPEC_N];
@@ -125,22 +124,32 @@ public class SignalProcessing {
 		for (int i=0; i < sweeps; i++){
 			if(( i*SPEC_N+SPEC_N ) > x.length)
 				break;
+			pow=0;
 			for (int k=0;k<SPEC_N;k++){
-				weight[i]= ((double) (x[i*SPEC_N + k]*x[i*SPEC_N + k]));
+				pow+=(x[i*SPEC_N + k]*x[i*SPEC_N + k]);
 			}
-		}
-		for (int i=0; i < sweeps; i++){
-			if(weight[i]==0){
+			weight[i]= SPEC_N/pow;
+			if(weight[i] == Double.POSITIVE_INFINITY)
 				weight[i]=0;
-			}else{
-				weight[i]=SPEC_N/weight[i];
-			}
 			weightSum+=weight[i];
 		}
+		
 		//Normalize the weights
+		
+	
+		//Print stats for debugging
+		double maxW=Double.MIN_VALUE, minW=Double.MAX_VALUE;
 		for(int i=0;i<sweeps;i++){
-			weight[i]=1/weightSum;
+			weight[i]=weight[i]/weightSum;
+			maxW=(weight[i] > maxW) ? weight[i]:maxW;
+			minW=(weight[i] < minW) ? weight[i]:minW;
+			
 		}
+		
+		//System.out.println("Nw= " + weight.length + "  max= " + maxW 
+		//		+ " min= " + minW +  "\t\tratio= " + (maxW/minW));
+		
+		
 		//Perform windowing and running average on the Amplitude spectrum
 		//averaging is done by filling a buffer (windData) of size SPECN_N at offset i*SPEC_N
 		//until the end of the data.
@@ -148,13 +157,14 @@ public class SignalProcessing {
 			if(( i*SPEC_N+SPEC_N ) > x.length)
 				break;
 			for (int k=0;k<SPEC_N;k++){
-				winData[k]= weight[i]*x[i*SPEC_N + k]*SpectralWindows.hanning(k,SPEC_N);
+				winData[k]= x[i*SPEC_N + k]*SpectralWindows.hanning(k,SPEC_N);
 			}
 
 			tmpFFT=FFT.transform(winData,TransformType.FORWARD);
 			for(int k=0;k<Axx[0].length;k++){
-				Axx[1][k]=( (i*Axx[1][k]) + tmpFFT[k].abs()*scaleFactor )/
-						((double) i+1.0); //averaging
+				//Axx[1][k]=( (i*Axx[1][k]) + tmpFFT[k].abs()*scaleFactor )/
+				//		((double) i+1.0); //averaging
+				Axx[1][k]= Axx[1][k] + weight[i]*tmpFFT[k].abs()*scaleFactor; //averaging
 			}
 
 		}
